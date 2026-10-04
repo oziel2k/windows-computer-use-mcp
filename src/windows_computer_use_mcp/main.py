@@ -5,9 +5,15 @@ Started and stopped by the MCP host (stdio or HTTP transport).
 
 import logging
 import logging.config
+import os
 import sys
+from pathlib import Path
 
 from .transport import run_server
+
+# Absolute log path: a bare filename lands in whatever cwd the MCP host used (e.g. D:\Dev\repos)
+LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "pywinauto-mcp" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configure logging before other imports to ensure proper logging setup
 logging.basicConfig(
@@ -15,7 +21,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stderr),
-        logging.FileHandler("pywinauto-mcp.log", encoding="utf-8"),
+        logging.FileHandler(LOG_DIR / "pywinauto-mcp.log", encoding="utf-8"),
     ],
 )
 
