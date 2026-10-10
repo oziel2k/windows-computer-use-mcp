@@ -183,6 +183,8 @@ screenshots/
 
 # MCPB pack sync (scripts/build-mcpb-package.ps1 copies src/ here)
 mcpb/src/
+# MCPB asset sync (pack.ps1 copies assets/prompts here; derived, never commit)
+mcpb/assets/
 
 # DXT build artifacts (keep dist/ in repo for releases)
 # build/  # Keep build directory for CI/CD
