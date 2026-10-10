@@ -1,8 +1,1 @@
-{
-  "score_before": 0,
-  "score_after": "50 (self-assessed, unverified)",
-  "timestamp": "2026-10-10T16:19:00.6393847+02:00",
-  "commit": "6f858c25e25948ab215c52634cc8b9e07e7d1480",
-  "host": "GOLIATH",
-  "assfix": "2026-10-10"
-}
+{"assfix": "2026-10-10 pass-2", "commit": "d11aae2c815bc5a5b36e1793b25dc272dcf84075", "host": "GOLIATH", "report": "reports/assess-2026-10-10.md", "score_after": "82 (self-assessed, unverified)", "score_before": 50, "timestamp": "2026-10-10T17:14:49.8524232+02:00"}

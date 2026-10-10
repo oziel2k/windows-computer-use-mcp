@@ -6,6 +6,27 @@ All notable changes to Windows Computer Use will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - pass-2 score-lift 2026-10-10
+
+### Fixed
+
+- **Tool docstrings (H5/H6)** - ## Return Format + ## Examples in 20/20 tool
+  files (22/22 live tools incl. app.py).
+- **Tool annotations (M9)** - annotations= on all live tools via shared
+  tools/_annotations.py (real MCP hint keys).
+- **Import cycle (found this pass)** - app.py no longer imports the tools
+  package (it silently cut registration to ~2 tools); hints inline instead.
+- **Coverage gate (H9)** - 20.4% -> 37.5%; --cov-fail-under=30 now passes
+  (13 new hardware-free tests).
+
+### Added
+
+- **Claude plugin (M5)** - .claude-plugin/plugin.json + hooks/hooks.json.
+- **Onboarding (H12)** - docs/ONBOARDING.md + Dashboard red cue
+  (data-testid="onboarding-cue") + declared MOCK-until-onboarded UI.
+- **LLM glom-on UI (H11-FE)** - Settings auto-detect panel
+  (/api/v1/llm/discover) + global store/llm.ts.
+
 ## [0.8.0] - 2026-10-10
 
 ### Fixed (assfix 2026-10-10)
