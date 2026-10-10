@@ -33,7 +33,12 @@ for pkg in (
     "winrt_windows_media_ocr",
     "winrt_windows_globalization",
 ):
-    datas += copy_metadata(pkg)
+    try:
+        datas += copy_metadata(pkg)
+    except Exception:
+        # Optional deps (e.g. winrt_*) may be absent; their hiddenimports
+        # above are best-effort and the frozen app degrades gracefully.
+        pass
 
 hiddenimports = [
     "uvicorn.logging",
