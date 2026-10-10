@@ -30,6 +30,16 @@ _DEPOT_URL = (
 
 _DB_PATH = Path(__file__).resolve().parent / "data" / "fleet_errors.sqlite3"
 
+
+def _db_path_str() -> str | None:
+    """Resolved DB path, or None when unset. Never str(None) into a file
+    literally named 'None' (that bug littered repo roots from the fail-soft
+    test path)."""
+    if _DB_PATH is None:
+        return None
+    return str(_DB_PATH)
+
+
 _ERROR_TYPE_HINTS = (
     ("timeout", "timeout"),
     ("timed out", "timeout"),
@@ -64,6 +74,9 @@ def record_fleet_failure(
     params: dict | None = None,
 ) -> None:
     """Record a mission step failure into the local fleet_error ring buffer."""
+    db = _db_path_str()
+    if db is None:
+        return
     try:
         record_fleet_error(
             server="windows-computer-use-mcp",
@@ -72,7 +85,7 @@ def record_fleet_failure(
             error_type=error_type,
             message=message,
             params=params,
-            db_path=str(_DB_PATH),
+            db_path=db,
         )
     except Exception:
         logger.debug("fleet failure record skipped", exc_info=True)
@@ -113,7 +126,10 @@ def fetch_or_local_hints(*, tool: str, error_type: str, limit: int = 3) -> list[
     try:
         from windows_computer_use_mcp.fleet_error_telemetry import query_fleet_errors
 
-        for record in query_fleet_errors(tool=tool, error_type=error_type, last_n=limit, db_path=str(_DB_PATH)):
+        db = _db_path_str()
+        if db is None:
+            return hints
+        for record in query_fleet_errors(tool=tool, error_type=error_type, last_n=limit, db_path=db):
             recovery = record.get("recovery")
             if isinstance(recovery, list):
                 hints.extend(h for h in recovery if h)
