@@ -1,5 +1,7 @@
 # Installation
 
+> **First time?** Complete [docs/ONBOARDING.md](docs/ONBOARDING.md) before expecting live host calls.
+
 ## Desktop app (recommended for most users)
 
 **Windows only.** One installer — no Python, `uv`, or git required on the target machine.

@@ -68,6 +68,7 @@ See **[INSTALL.md](INSTALL.md)** for detailed setup. Run `just demo` for example
 | Doc | Content |
 |-----|---------|
 | [INSTALL.md](INSTALL.md) | Setup: desktop app, uv, MCP config |
+| [docs/ONBOARDING.md](docs/ONBOARDING.md) | First-timer setup: what to install, pitfalls, sanity check |
 | [docs/README.md](docs/README.md) | Full documentation hub |
 | [docs/py-stack.md](docs/py-stack.md) | Python dependency deep dive |
 | [docs/composing-with-playwright.md](docs/composing-with-playwright.md) | Browser automation with Playwright MCP |
