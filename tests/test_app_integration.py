@@ -15,8 +15,12 @@ class TestAppInitialization:
 
     def test_app_version(self):
         """Test that app has correct version from pyproject.toml."""
-        # Note: In our current industrialized version, app.version is 0.4.2
-        assert app.version == "0.7.0"
+        import tomllib
+        from pathlib import Path
+
+        pyproject = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        expected = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
+        assert app.version == expected
 
     def test_ocr_availability_flag(self):
         """Test OCR availability flag."""
