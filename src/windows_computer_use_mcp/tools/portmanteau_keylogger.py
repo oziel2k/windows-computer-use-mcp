@@ -54,6 +54,7 @@ ToolResult with status, message, and data (events list, counts, etc.).
     )
     def global_keylogger(request: KeyloggerOperationRequest) -> ToolResult:
         """Global keyboard capture handler."""
+        global _hud
         try:
             op = request.operation
 
@@ -102,7 +103,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
                         data=out,
                         recovery_tip="If already running, call 'stop' first.",
                     )
-                global _hud
                 _hud = CuaHUD()
                 _hud.start()
                 return ToolResult(
@@ -113,7 +113,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
             if op == "stop":
                 out = _svc.stop()
-                global _hud
                 if _hud:
                     _hud.stop()
                     _hud = None
@@ -121,7 +120,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
             if op == "status":
                 out = _svc.status()
-                global _hud
                 out["hud_active"] = _hud is not None
                 return ToolResult(status="success", message="Keylogger status.", data=out)
 
@@ -141,7 +139,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
         except Exception as e:
             logger.error("global_keylogger error: %s", e)
-            global _hud
             if _hud:
                 _hud.stop()
                 _hud = None
