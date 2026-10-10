@@ -19,8 +19,18 @@ TEST_IMAGE_DIR = Path(__file__).parent / "test_images"
 KNOWN_FACE_IMAGE = TEST_IMAGE_DIR / "known_face.jpg"
 UNKNOWN_FACE_IMAGE = TEST_IMAGE_DIR / "unknown_face.jpg"
 
-# Use mocks for face recognition tests instead of requiring actual images
-# Tests will create mock image data when needed
+# Use mocks for face recognition functions; byte payloads below are real
+# minimal JPEGs (decodable, no face) so cv2.imdecode paths are exercised.
+
+
+def _blank_jpg_bytes() -> bytes:
+    """Minimal valid JPEG with no face in it."""
+    import cv2
+    import numpy as np
+
+    ok, buf = cv2.imencode(".jpg", np.zeros((100, 100, 3), dtype=np.uint8))
+    assert ok
+    return buf.tobytes()
 
 
 @pytest.fixture
@@ -78,7 +88,7 @@ def test_add_known_face(mock_load_image, mock_face_locations, mock_face_encoding
 
     # Test with image data
     mock_face_encodings.return_value = [np.random.rand(128)]
-    success = face_rec.add_known_face("Test User 2", image_data=b"fake image data")
+    success = face_rec.add_known_face("Test User 2", image_data=_blank_jpg_bytes())
     assert success
     assert "Test User 2" in face_rec.known_faces
 
@@ -153,7 +163,7 @@ def test_recognize_face(
         mock_compare_faces.return_value = [True]
         mock_face_distance.return_value = [0.3]
 
-        success, name, confidence = face_rec.recognize_face(b"fake image data")
+        success, name, confidence = face_rec.recognize_face(_blank_jpg_bytes())
         assert success
         assert name == "Test User"
         assert 0.0 <= confidence <= 1.0
@@ -201,10 +211,12 @@ def test_capture_and_verify_face(mock_video_capture, face_rec):
         mock_face_locations.return_value = [(100, 200, 300, 400)]
         mock_face_encodings.return_value = [np.zeros(128)]
 
-        # Add a known face with a different encoding
+        # Add a known face with a GUARANTEED-different encoding (ones vs
+        # zeros: dlib distance ~11, far beyond tolerance, so the probe can
+        # never match even with the real comparator)
         mock_load_image.return_value = np.zeros((100, 100, 3), dtype=np.uint8)
         mock_face_locations.return_value = [(10, 20, 30, 40)]
-        mock_face_encodings.return_value = [np.random.rand(128)]
+        mock_face_encodings.return_value = [np.ones(128)]
         import tempfile
 
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_file:
@@ -212,6 +224,9 @@ def test_capture_and_verify_face(mock_video_capture, face_rec):
             tmp_path = tmp_file.name
         try:
             face_rec.add_known_face("Test User", tmp_path)
+
+            # Probe frames decode to zeros: guaranteed mismatch vs ones.
+            mock_face_encodings.return_value = [np.zeros(128)]
 
             # Test with face detected but not recognized (different encoding)
             success, name, confidence = face_rec.capture_and_verify_face(timeout=1)
