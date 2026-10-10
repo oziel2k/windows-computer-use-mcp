@@ -7,6 +7,8 @@
   <a href="https://fastmcp.com"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+Computer-use agent (CUA) for Windows: let an AI see and operate your desktop — click buttons, type text, read windows, run whole missions autonomously. Built on pywinauto.
+
 **A tool for agents, and an agent itself.**
 
 | You | It |
