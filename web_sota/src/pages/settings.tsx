@@ -21,6 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMcpSetup } from "@/hooks/useMcpSetup";
 import { apiPath } from "@/lib/api";
+import {
+	refreshDiscover,
+	selectLlm,
+	setProviders as setStoreProviders,
+	useLlmStore,
+} from "@/store/llm";
 
 interface LlmProvider {
 	id: string;
@@ -44,12 +50,17 @@ export function Settings() {
 		() => localStorage.getItem("pywinauto-llm-model") || "",
 	);
 	const [llmSaved, setLlmSaved] = useState(false);
+	const llmStore = useLlmStore();
 
 	useEffect(() => {
 		fetch(apiPath("/api/llm/providers"))
 			.then((r) => r.json() as Promise<ProvidersResponse>)
-			.then((data) => setProviders(data.providers))
+			.then((data) => {
+				setProviders(data.providers);
+				setStoreProviders(data.providers);
+			})
 			.catch(() => setProviders([]));
+		refreshDiscover();
 	}, []);
 
 	const currentProvider = providers.find((p) => p.id === selectedProvider);
@@ -57,6 +68,7 @@ export function Settings() {
 	const handleSaveLlm = () => {
 		localStorage.setItem("pywinauto-llm-provider", selectedProvider);
 		localStorage.setItem("pywinauto-llm-model", selectedModel);
+		selectLlm(selectedProvider, selectedModel);
 		setLlmSaved(true);
 		setTimeout(() => setLlmSaved(false), 2000);
 	};
@@ -161,6 +173,46 @@ export function Settings() {
 							<code className="text-slate-400">llm_repo_context.py</code> ·{" "}
 							<code className="text-slate-400">docs/LLM_REPO_CONTEXT.md</code>
 						</p>
+						<div
+							className="rounded-md border border-slate-800 bg-slate-950/50 p-3"
+							data-testid="llm-onboarding"
+						>
+							<p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+								Auto-detect (Ollama :11434 / LM Studio :1234)
+							</p>
+							{llmStore.discover.length === 0 && (
+								<p className="mt-1 text-xs text-slate-500">
+									Probing… (backend GET /api/v1/llm/discover)
+								</p>
+							)}
+							{llmStore.discover.map((d) => (
+								<div
+									key={d.id}
+									className="mt-1 flex items-center justify-between text-xs"
+									data-testid={`llm-provider-card-${d.id}`}
+								>
+									<span className="text-slate-300">{d.label}</span>
+									<Badge
+										variant="outline"
+										className={
+											d.detected
+												? "border-emerald-500/40 text-emerald-400"
+												: "border-slate-700 text-slate-500"
+										}
+									>
+										{d.detected
+											? `online — ${d.models.length} model(s)`
+											: "offline"}
+									</Badge>
+								</div>
+							))}
+							{llmStore.gpuPresent != null && (
+								<p className="mt-1 text-xs text-slate-500">
+									GPU (nvidia-smi):{" "}
+									{llmStore.gpuPresent ? "detected" : "not detected"}
+								</p>
+							)}
+						</div>
 					</CardContent>
 				</Card>
 

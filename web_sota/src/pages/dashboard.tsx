@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiPath } from "@/lib/api";
+import { MOCK_ACTORS, MOCK_HOST } from "@/lib/mockOnboarding";
 
 type HostInfo = {
 	cpu_percent: number;
@@ -203,6 +204,27 @@ export function Dashboard() {
 				</div>
 			</div>
 
+			{bridge !== "ok" && bridge !== "loading" && (
+				<a
+					href="/settings"
+					data-testid="onboarding-cue"
+					className="block w-full rounded-lg bg-red-600 px-4 py-3 text-center text-base font-semibold text-white hover:bg-red-500"
+				>
+					Complete onboarding — connect the Windows host (docs/ONBOARDING.md)
+				</a>
+			)}
+
+			{bridge === "error" && (
+				<div
+					data-testid="mock-data-banner"
+					className="rounded-lg border border-dashed border-rose-500/60 bg-rose-950/20 px-4 py-3 text-sm text-rose-200"
+				>
+					Sample data below is declared MOCK content (actors:{" "}
+					{MOCK_ACTORS.join(", ")}). It clears automatically once the backend is
+					reachable — see docs/ONBOARDING.md § Declared doubles.
+				</div>
+			)}
+
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 				<Card
 					className="border-slate-800 bg-slate-950/50"
@@ -311,11 +333,24 @@ export function Dashboard() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold text-white">
-							{host?.window_count != null ? host.window_count : "—"}
+							{host?.window_count != null
+								? host.window_count
+								: bridge === "error"
+									? MOCK_HOST.window_count
+									: "—"}
 						</div>
 						<p className="text-xs text-slate-400">
 							pygetwindow.getAllWindows() length
 						</p>
+						{!host && bridge === "error" && (
+							<Badge
+								variant="outline"
+								className="mt-1 border-dashed border-rose-500/60 text-rose-300"
+								data-testid="mock-badge"
+							>
+								MOCK
+							</Badge>
+						)}
 					</CardContent>
 				</Card>
 

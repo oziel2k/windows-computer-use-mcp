@@ -10,6 +10,10 @@ import logging
 import os
 import time
 
+# Local annotation hints (inline: importing tools._annotations here would
+# cycle through tools/__init__ -> app while the package is initializing).
+_MUTATING_LOCAL = {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}
+
 logger = logging.getLogger(__name__)
 
 
@@ -102,9 +106,16 @@ class ApprovalState:
 approval_state = ApprovalState()
 
 
-@app.tool()
+@app.tool(annotations=_MUTATING_LOCAL)
 def approve_automation(duration_minutes: float = 5.0) -> dict:
     """Approve UI automation actions for a specified duration to prevent repetitive prompts.
+
+    ## Return Format
+    {"status": "success", "message": str, "safe_window_until": float}
+
+    ## Examples
+    - approve_automation(duration_minutes=5.0) -> {"status": "success", "message": "UI automation approved until 17:05:00 (5.0 minutes)", ...}
+    - approve_automation(duration_minutes=30) -> {"status": "success", ...}
 
     Args:
         duration_minutes: Number of minutes to allow automated actions (default 5.0).
@@ -119,11 +130,18 @@ def approve_automation(duration_minutes: float = 5.0) -> dict:
     }
 
 
-@app.tool()
+@app.tool(annotations=_MUTATING_LOCAL)
 def automation_safety(
     operation: str = "status",
 ) -> dict:
     """Inspect or reset server-side safety limits (rate, kill switch, dry-run). Not a substitute for HITL.
+
+    ## Return Format
+    {"status": "success" | "error", "snapshot": {...} | "message": str, ...}
+
+    ## Examples
+    - automation_safety(operation="status") -> {"status": "success", "snapshot": {...}, ...}
+    - automation_safety(operation="reset_counters") -> {"status": "success", "message": "Rolling action window cleared.", ...}
 
     Operations:
     - status: Counters + env flags (windows_computer_use_mcp_KILL_SWITCH, DRY_RUN, MAX_ACTIONS_PER_MINUTE, ENABLE_FACE).
