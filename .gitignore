@@ -31,6 +31,9 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+# ...except our hand-maintained backend specs (build inputs, not artifacts)
+!windows-computer-use-backend.spec
+!pywinauto-mcp-backend.spec
 
 # Installer logs
 pip-log.txt
