@@ -26,5 +26,5 @@ from windows_computer_use_mcp.main import main
 port = os.environ.get("MCP_PORT") or os.environ.get("PORT")
 if port:
     host = os.environ.get("MCP_HOST", "127.0.0.1")
-    sys.argv = ["run_server.py", "--mode", "http", "--host", host, "--port", str(port)]
+    sys.argv = ["run_server.py", "--http", "--host", host, "--port", str(port)]
 main()
