@@ -13,6 +13,7 @@ import logging
 from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.cua_hud import CuaHUD
 from windows_computer_use_mcp.keylogger_service import GlobalKeyloggerService
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import KeyloggerOperationRequest, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,15 @@ OPERATIONS:
 
 RETURNS:
 ToolResult with status, message, and data (events list, counts, etc.).
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"events": [...], ...}, "recovery_tip": str | null}
+
+## Examples
+- global_keylogger(request={"operation": "status"}) -> {"status": "success", "data": {"running": False, ...}}
+- global_keylogger(request={"operation": "start"}) -> {"status": "success", ...} (requires HITL approval + ENABLE_KEYLOGGER=1)
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def global_keylogger(request: KeyloggerOperationRequest) -> ToolResult:
         """Global keyboard capture handler."""

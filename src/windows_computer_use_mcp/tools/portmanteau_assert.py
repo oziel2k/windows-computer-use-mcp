@@ -15,6 +15,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
 from windows_computer_use_mcp.tools.models import AssertOperationRequest, ToolResult
 
 
@@ -49,7 +50,15 @@ WHEN TO USE:
 RECOVERY:
 If wait_stable times out, increase timeout_s or narrow region_* to the editor panel only.
 If assert_changed fails with low changed_pct, the shortcut may not have reached the focused window.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"changed_pct": float, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_assert(request={"operation": "wait_stable", "timeout_s": 10}) -> {"status": "success", ...}
+- automation_assert(request={"operation": "assert_text", "expected_text": "Save", "region_left": 0, "region_top": 0, "region_right": 800, "region_bottom": 600}) -> {"status": "success", ...}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def automation_assert(request: AssertOperationRequest) -> ToolResult:
         """Verification portmanteau - stability, diff, and assert operations."""

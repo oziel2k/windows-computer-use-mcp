@@ -19,6 +19,7 @@ from windows_computer_use_mcp.safety import (
     ENV_MAX_WATCHERS,
     watcher_limits,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -160,7 +161,15 @@ OPERATIONS:
 - status: Check whether a watcher has triggered.
 - stop: Cancel a running watcher.
 - list: List all active watchers.
+
+## Return Format
+{"status": "success" | "error" | "blocked", "message": str, "data": {"watcher_id": str, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_watch(operation="start", condition="window_appears", target="Save As") -> {"status": "success", "data": {"watcher_id": "watch_ab12cd34"}}
+- automation_watch(operation="status", watcher_id="watch_ab12cd34") -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_watch(
         operation: str,

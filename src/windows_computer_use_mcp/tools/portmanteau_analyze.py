@@ -23,6 +23,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -282,7 +284,7 @@ def _portfolio_operation(hwnd: int, hud) -> dict[str, Any]:
     }
 
 
-@app.tool()
+@app.tool(annotations=_READONLY_LOCAL)
 def analyze_winapp(
     operation: Literal["crawl", "discover", "portfolio"] = "crawl",
     window_handle: int | None = None,
@@ -316,6 +318,13 @@ def analyze_winapp(
     Returns:
         {"success": bool, "element_count": int, "screenshot_path": str,
          "report_path": str, "report_text": str, ...}
+
+    ## Return Format
+    {"success": bool, "element_count": int, "screenshot_path": str, "report_path": str}
+
+    ## Examples
+    - analyze_winapp(operation="crawl", window_title="Notepad") -> {"success": True, "element_count": 42, ...}
+    - analyze_winapp(operation="portfolio", window_title="Notepad", states=["main", "settings"]) -> {"success": True, ...}
     """
     from windows_computer_use_mcp.cua_hud import CuaHUD
 

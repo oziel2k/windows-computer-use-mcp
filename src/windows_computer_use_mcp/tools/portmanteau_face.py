@@ -195,6 +195,7 @@ class FaceRecognitionManager:
 
 
 from windows_computer_use_mcp.presence import get_monitor
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import FaceOperationRequest, ToolResult
 
 # Create global instance if available
@@ -251,7 +252,15 @@ This tool operates entirely locally and requires explicit opt-in via 'windows_co
 
 RECOVERY:
 If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually the default) and ensure no other application is currently locking the device.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_face(request={"operation": "presence_status"}) -> {"status": "success", "data": {"state": "present", ...}}
+- automation_face(request={"operation": "list"}) -> {"status": "success", "data": {"faces": [...]}, ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_face(request: FaceOperationRequest) -> ToolResult:
         """Face recognition operations tracking SOTA 2026 biometric standards."""

@@ -16,6 +16,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ShortcutOperationRequest, ToolResult
 
 if app is not None:
@@ -37,7 +38,15 @@ SUPPORTED APPS: vroidstudio (alias vroid, vroid_studio)
 
 RECOVERY:
 Call automation_windows(focus) first. Set windows_computer_use_mcp_KEYBOARD=win32 for HWND-targeted send.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_shortcut(request={"operation": "list", "app": "vroidstudio"}) -> {"status": "success", "data": {"shortcuts": [...]}}
+- automation_shortcut(request={"operation": "send", "app": "vroidstudio", "action": "export_vrm"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_shortcut(request: ShortcutOperationRequest) -> ToolResult:
         """App-aware shortcut portmanteau."""

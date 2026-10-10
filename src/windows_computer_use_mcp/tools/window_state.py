@@ -12,6 +12,7 @@ try:
         normalize_elements_for_snapshot,
     )
     from windows_computer_use_mcp.snapshot_store import get_snapshot_store
+    from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
     from windows_computer_use_mcp.tools.models import ToolResult, WindowStateRequest
     from windows_computer_use_mcp.trajectory import log_trajectory
 
@@ -40,7 +41,15 @@ WHEN TO USE:
 - Prefer this over get_desktop_state for targeted loops.
 
 See docs/CUA_PARITY.md and windows_computer_use_mcp_DISPATCH for background vs foreground dispatch.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"snapshot_id": str, "elements": [...]}, "recovery_tip": str | null}
+
+## Examples
+- get_window_state(request={"window_handle": 123456, "capture_mode": "som"}) -> {"status": "success", "data": {"snapshot_id": "abc123", ...}}
+- get_window_state(request={"window_handle": 123456, "capture_mode": "ax"}) -> {"status": "success", ...}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def get_window_state(request: WindowStateRequest) -> ToolResult:
         try:
