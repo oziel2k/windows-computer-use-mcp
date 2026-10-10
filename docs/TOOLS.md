@@ -24,11 +24,11 @@
 
 | Tool | Key operations | Added |
 |------|---------------|-------|
-| `automation_mission` | **run** (goal → decompose → execute → retry → verify), plan, status, cancel | 1 |
+| `automation_mission` | **run** (goal → decompose → execute → retry → verify), plan, status, cancel. Max 2 concurrent runs (extra callers get `blocked`) | 1 |
 | `automation_mission` (workflow) | **workflow** — explicit steps, app launch, timeout, data chaining with `$ref:` | 3, 5 |
 | `automation_macro` | record, stop, replay, **replay_with_verify**, list | 3 |
 | `automation_smart` | **click** (intent-based, across all windows), **discover**, list_apps, list_controls | 4 |
-| `automation_watch` | start, status, stop, list (background thread, 4 condition types) | 5 |
+| `automation_watch` | start, status, stop, list (background thread, 4 condition types). Capped: max 8 running, 0.5 s min interval, 3600 s max lifetime | 5 |
 | `automation_analyze` | crawl, discover, portfolio (WinApp UI tree analysis with HUD overlay) | — |
 
 ## Safety & opt-in
@@ -36,7 +36,7 @@
 | Tool | Notes |
 |------|-------|
 | `approve_automation` | Grant HITL time window for mouse/keyboard |
-| `automation_safety` | status, reset_counters — kill switch, rate limits, dry-run |
+| `automation_safety` | status, reset_counters — kill switch, rate limits, dry-run, watcher census, host CPU/RAM snapshot |
 | `automation_face` | **Off by default** — `WINDOWS_COMPUTER_USE_MCP_ENABLE_FACE=1` + `face` extra |
 | `global_keylogger` | **Off by default** — `WINDOWS_COMPUTER_USE_MCP_ENABLE_KEYLOGGER=1` (non-stealth debug hook) |
 
