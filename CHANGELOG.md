@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.0] - 2026-10-10
 
+### Fixed (assfix 2026-10-10)
+
+- **Silent swallows** - removed S110/S112/E722 blanket ignores; all 55 live
+  `try/except-pass/continue` sites now log (`debug` for loop probes,
+  `warning` in API paths). `tools/archived/*` keeps a scoped ignore (frozen dead code).
+- **MCPB `${PWD}`** - root `manifest.json` uses `${__dirname}` (Claude Desktop
+  never expanded `${PWD}`; bundles failed on real installs).
+- **HTTP lifespan** - parent FastAPI enters `_mcp_http.lifespan(app)`; real
+  clients no longer get `Session terminated` while `/health` is 200.
+  Verified live: POST /mcp initialize + tools/list (20 tools) over a session.
+- **CORS regex unconditional** - Tauri/LAN origins no longer gated on an env flag.
+- **Single MCP mount** - `/mcp` only (dropped the `/` catch-all).
+- **Launcher** - `start.ps1 -BackendOnly` (zombie-port clear, TCP readiness poll
+  on `/api/v1/health`, absolute uv path); proven live with exit 0.
+- **Pydantic v2** - `.dict()` to `.model_dump()` (security_endpoints, tools/utils).
+- **Versions single-sourced** - health/diagnostics/FastAPI title read the
+  package version (`app.package_version()`); glama.json bumped to 0.8.0 (20 tools).
+
+### Added (assfix 2026-10-10)
+
+- `POST /api/v1/shutdown` (orderly NSSM restart; proven live: 200 + exit),
+  `GET /api/v1/capabilities`, `GET /api/v1/skills` (real SKILL.md content),
+  `GET /api/v1/llm/discover` (Ollama/LM Studio probe + GPU flag),
+  `GET /api/v1/llm/onboarding`, `POST /api/v1/llm/chat/stream` (SSE passthrough).
+- `docs/CONFIGURATION.md`, `docs/TROUBLESHOOTING.md`, `tests/test_meta_endpoints.py` (8 tests).
+- `just serve` recipe; `## Session Context` in `.cursorrules`; tracked
+  `pywinauto-mcp-backend.spec`; removed 12 tracked `*.bak-*` dross files.
+
 ### Added
 
 - **Resource hardening (BUG-071)** - server defends itself against host saturation: rotating server log (10 MB x 5, replacing the unbounded file that once reached 3.4 GB), max 2 concurrent missions (`windows_computer_use_mcp_MAX_CONCURRENT_MISSIONS`, extra callers get clean `blocked`), watcher caps (max 8 running, 0.5 s min poll interval, 3600 s max lifetime; all env-overridable), host CPU/RAM snapshot plus watcher census in `GET /api/v1/safety/status`. New `tests/test_resource_guards.py` (6 tests). See `docs/SAFETY.md` section 7.
