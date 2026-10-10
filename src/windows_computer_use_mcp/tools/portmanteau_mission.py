@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 from windows_computer_use_mcp.retry_policy import RetryPolicy
 from windows_computer_use_mcp.safety import with_mission_slot
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import MissionOperationRequest, ToolResult
 
 _MISSIONS: dict[str, dict[str, Any]] = {}
@@ -490,7 +491,15 @@ If a step fails, the mission continues with remaining steps (non-fatal).
 Use 'status' with the mission_id to review step-level results.
 RETURNS:
 A ToolResult object with mission progress, step results, and next steps.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"mission_id": str, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_mission(request={"operation": "plan", "goal": "open Notepad and type hello"}) -> {"status": "success", ...}
+- automation_mission(request={"operation": "run", "goal": "open Notepad and type hello"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_mission(request: MissionOperationRequest, ctx: Context = None) -> ToolResult:
         """Mission orchestration with autonomous execution loop."""

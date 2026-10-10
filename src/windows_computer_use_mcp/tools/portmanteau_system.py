@@ -26,6 +26,7 @@ from windows_computer_use_mcp.host_metrics import collect_host_metrics
 from windows_computer_use_mcp.safety import (
     is_face_tool_enabled,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import SystemOperationRequest, ToolResult
 
 try:
@@ -101,7 +102,15 @@ WHEN TO USE:
 
 RECOVERY:
 If 'wait_for_window' times out, verify the 'title' exists or increase 'timeout'. If 'clipboard' operations fail, ensure the 'pyperclip' dependancy is installed and no other app is locking the clipboard.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_system(request={"operation": "status"}) -> {"status": "success", "message": "System status OK.", ...}
+- automation_system(request={"operation": "wait", "seconds": 2}) -> {"status": "success", "message": "Waited for 2 seconds.", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_system(request: SystemOperationRequest) -> ToolResult:
         """System helpers: diagnostics, help text, wait, clipboard, process list, start app."""

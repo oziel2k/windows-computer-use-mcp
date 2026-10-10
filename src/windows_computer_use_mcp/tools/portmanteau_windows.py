@@ -19,6 +19,7 @@ from windows_computer_use_mcp.display_utils import (
     get_monitor_at_point,
     translate_coords,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult, WindowOperationRequest
 
 logger = logging.getLogger(__name__)
@@ -129,7 +130,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and window metadata.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"count": int, "windows": [...]}, "recovery_tip": str | null}
+
+## Examples
+- automation_windows(request={"operation": "list"}) -> {"status": "success", "message": "Successfully listed 12 visible windows.", ...}
+- automation_windows(request={"operation": "find", "title": "Notepad", "partial": True}) -> {"status": "success", "data": {"count": 1, ...}}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_windows(request: WindowOperationRequest) -> ToolResult:
         """Unified window management handler."""

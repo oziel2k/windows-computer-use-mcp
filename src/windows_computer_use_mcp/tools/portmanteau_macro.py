@@ -18,6 +18,7 @@ from typing import Any
 from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.mission_store import _persist_dir
 from windows_computer_use_mcp.retry_policy import RetryPolicy
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -98,7 +99,15 @@ OPERATIONS:
 - replay: Execute a saved macro step by step.
 - replay_with_verify: Replay and verify each step matches the recorded outcome.
 - list: List saved macros with metadata.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_macro(operation="record", name="login-flow") -> {"status": "success", ...}
+- automation_macro(operation="replay", name="login-flow") -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_macro(
         operation: str,

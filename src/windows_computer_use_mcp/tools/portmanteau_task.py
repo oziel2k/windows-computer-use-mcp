@@ -17,6 +17,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import TaskOperationRequest, ToolResult
 
 if app is not None:
@@ -42,7 +43,15 @@ OPERATIONS:
 - list_templates: per-app template library manifest (T2.3)
 
 See docs/CUA_ASSISTANT_TODO.md and docs/MEMOPS_CUA.md.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_task(request={"operation": "list_profiles"}) -> {"status": "success", "data": {"profiles": [...]}}
+- automation_task(request={"operation": "run", "app": "notepad.exe", "steps": [...]}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_task(request: TaskOperationRequest) -> ToolResult:
         """Task runner portmanteau."""

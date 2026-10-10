@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 from windows_computer_use_mcp.app import app
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult
 
 try:
@@ -134,7 +135,15 @@ OPERATIONS:
 - list_controls: List controls for a specific window handle.
 - click: Find an element by description (e.g. 'the Save button') across all windows
   using element scanning. Fallback to OCR when UIA fails.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"apps": [...]}, "recovery_tip": str | null}
+
+## Examples
+- automation_smart(operation="list_apps") -> {"status": "success", "message": "5 running apps detected.", ...}
+- automation_smart(operation="click", description="the Save button") -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_smart(
         operation: str,

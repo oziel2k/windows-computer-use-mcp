@@ -24,6 +24,7 @@ from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.dispatch import BACKGROUND_UNAVAILABLE, click_element, resolve_dispatch
 from windows_computer_use_mcp.snapshot_store import get_snapshot_store
 from windows_computer_use_mcp.telemetry import log_action
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ElementOperationRequest, ToolResult
 from windows_computer_use_mcp.trajectory import log_trajectory
 from windows_computer_use_mcp.win32_mouse import (
@@ -364,7 +365,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and element data.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_elements(request={"window_handle": 123456, "operation": "list"}) -> {"status": "success", "message": "Listed 40 elements.", ...}
+- automation_elements(request={"window_handle": 123456, "operation": "click", "title": "Save"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_elements(request: ElementOperationRequest) -> ToolResult:
         """Unified UI element interaction handler."""

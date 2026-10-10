@@ -18,6 +18,7 @@ from windows_computer_use_mcp.display_utils import (
     translate_coords,
     virtual_screen_size,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import MouseOperationRequest, ToolResult
 from windows_computer_use_mcp.win32_mouse import (
     ButtonName,
@@ -60,7 +61,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and movement data.
+
+## Return Format
+{"status": "success" | "error" | "blocked", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_mouse(request={"operation": "position"}) -> {"status": "success", "data": {"x": 960, "y": 540, ...}}
+- automation_mouse(request={"operation": "click", "x": 960, "y": 540}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_mouse(request: MouseOperationRequest) -> ToolResult:
         """Unified mouse control handler."""
