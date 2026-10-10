@@ -14,7 +14,7 @@
       "command": "python",
       "args": ["-m", "windows_computer_use_mcp.main"],
       "env": {
-        "PYTHONPATH": "${PWD}",
+        "PYTHONPATH": "${__dirname}",
         "PYTHONUNBUFFERED": "1"
       }
     }

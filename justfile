@@ -21,7 +21,10 @@ install: bootstrap
 
 # Start the full orchestration (Vite + FastAPI)
 start:
-    pwsh -File .\start.ps1
+    powershell.exe -NoProfile -File .\start.ps1
+
+# Serve alias (fleet 1A recipe surface: serve/test/lint/fmt)
+serve: start
 
 # Start backend in development mode (reload enabled)
 dev:
@@ -57,10 +60,10 @@ paint-demo:
     Write-Host "[DRAW] Drawing Sun (Red)..." -ForegroundColor Red; \
     uv run -q python -c "from windows_computer_use_mcp.tools.portmanteau_elements import automation_elements; automation_elements('click', window_handle=$handle, title='Red', exact_match=False)"; \
     $sx = $cx + $cw - 150; $sy = $cy + 150; \
-    uv run -q python -c "from pywinauto_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$sx, y=$sy, x2=$($sx+50), y2=$($sy+50), duration=0.5)"; \
-    uv run -q python -c "from pywinauto_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$($sx+50), y=$($sy+50), x2=$sx, y2=$($sy+100), duration=0.5)"; \
-    uv run -q python -c "from pywinauto_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$sx, y=$($sy+100), x2=$($sx-50), y2=$($sy+50), duration=0.5)"; \
-    uv run -q python -c "from pywinauto_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$($sx-50), y=$($sy+50), x2=$sx, y2=$sy, duration=0.5)"; \
+    uv run -q python -c "from windows_computer_use_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$sx, y=$sy, x2=$($sx+50), y2=$($sy+50), duration=0.5)"; \
+    uv run -q python -c "from windows_computer_use_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$($sx+50), y=$($sy+50), x2=$sx, y2=$($sy+100), duration=0.5)"; \
+    uv run -q python -c "from windows_computer_use_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$sx, y=$($sy+100), x2=$($sx-50), y2=$($sy+50), duration=0.5)"; \
+    uv run -q python -c "from windows_computer_use_mcp.tools.portmanteau_mouse import automation_mouse; automation_mouse('drag', x=$($sx-50), y=$($sy+50), x2=$sx, y2=$sy, duration=0.5)"; \
     Write-Host " Industrial Painting Complete!" -ForegroundColor Cyan
 
 # Launch Notepad and render SOTA ASCII Art
@@ -80,8 +83,7 @@ build-native: build-sidecar
     $vcvars = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
     $envOutput = cmd /c "`"$vcvars`" > nul & set" | Where-Object { $_ -match '^(INCLUDE|LIB|LIBPATH|VCToolsVersion|WindowsSdkDir|UniversalCRTSdkDir|UCRTVersion)=' }
     foreach ($line in $envOutput) { $parts = $line.Split('=', 2); Set-Item -Path "env:$($parts[0])" -Value $parts[1] -ErrorAction SilentlyContinue }
-    Set-Location '{{justfile_directory()}}\web_sota\src-tauri'
-    npx @tauri-apps/cli build --bundles nsis
+    Set-Location '{{justfile_directory()}}\web_sota\src-tauri'; npx @tauri-apps/cli build --bundles nsis
     # Copy the NSIS installer to dist/ as a release artifact
     $nsisDir = '{{justfile_directory()}}\web_sota\src-tauri\target\release\bundle\nsis'
     $distDir = '{{justfile_directory()}}\dist'

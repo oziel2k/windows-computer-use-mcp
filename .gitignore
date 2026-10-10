@@ -149,9 +149,11 @@ cython_debug/
 .cursor/
 ruff_stats*.txt
 *.bak
+*.bak-*
 *.swp
 *.swo
 *~
+reports/
 
 # OS generated files
 .DS_Store
