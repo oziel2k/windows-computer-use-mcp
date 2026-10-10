@@ -92,10 +92,10 @@ def _get_window_info(window) -> dict[str, Any]:
                 mon = get_monitor_at_point(cx, cy)
                 info["monitor_index"] = mon.index
                 info["monitor_name"] = mon.name
-            except Exception:
-                pass
-        except Exception:
-            pass
+            except Exception as e:
+                logger.debug("monitor lookup failed, omitting monitor fields: %s", e)
+        except Exception as e:
+            logger.debug("window info probe failed, returning partial info: %s", e)
 
         return info
     except Exception as e:

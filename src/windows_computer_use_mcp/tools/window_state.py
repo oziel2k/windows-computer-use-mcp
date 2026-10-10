@@ -52,8 +52,8 @@ See docs/CUA_PARITY.md and windows_computer_use_mcp_DISPATCH for background vs f
                 dropped = get_snapshot_store().invalidate_for_handle(request.window_handle, ui_hash)
                 if dropped:
                     logger.debug("Invalidated %d stale snapshots for hwnd %s", dropped, request.window_handle)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("snapshot invalidation probe failed: %s", e)
 
             capturer = DesktopStateCapture(
                 max_depth=request.max_depth,

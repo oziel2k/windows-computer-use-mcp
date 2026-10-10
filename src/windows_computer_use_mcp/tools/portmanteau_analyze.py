@@ -139,8 +139,8 @@ def _crawl_operation(hwnd: int, hud) -> dict[str, Any]:
     window_rect = None
     try:
         window_rect = get_window_bbox(hwnd)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("analyze window bbox probe failed for hwnd %s: %s", hwnd, e)
 
     report_lines = [
         "# WinApp Analysis Report",

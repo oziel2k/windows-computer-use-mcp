@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime
 from typing import Any
 
 import psutil
+
+logger = logging.getLogger(__name__)
 
 
 def _system_disk_path() -> str:
@@ -29,8 +32,8 @@ def collect_host_metrics() -> dict[str, Any]:
         import pygetwindow as gw
 
         window_count = len(gw.getAllWindows())
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("window count probe failed: %s", e)
 
     return {
         "cpu_percent": cpu_percent,

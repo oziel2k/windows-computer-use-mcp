@@ -190,8 +190,8 @@ def get_best_strategy(tool: str, operation: str) -> str | None:
         ).fetchall()
         if rows:
             return rows[0][0]
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("telemetry lookup failed: %s", e)
     return None
 
 
