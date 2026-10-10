@@ -205,8 +205,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
             if best_strategy and tool_name in ("elements",):
                 if best_strategy in ("by_title", "by_auto_id", "by_control_id", "by_class_and_type"):
                     params["_prefer_strategy"] = best_strategy
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("mission strategy prefetch failed, using defaults: %s", e)
 
         def _try_call(_tn=tool_name, _tp=params):
             return _call_tool(_tn, _tp)
@@ -244,8 +244,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
                 error=retry_result.message if not retry_result.success else None,
                 session_id=mission_id,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("mission telemetry persist failed: %s", e)
 
         # Self-heal: track consecutive failures
         if retry_result.success:
@@ -281,8 +281,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
                 if hints:
                     step_result["fleet_recovery_hints"] = hints
                     step_result["message"] = f"{step_result['message']} [fleet hints: {'; '.join(hints[:3])}]"
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("mission fleet-hints enrichment failed: %s", e)
 
         if expected and retry_result.success and isinstance(retry_result.data, dict):
             step_result["verified"] = retry_result.data.get("verify")

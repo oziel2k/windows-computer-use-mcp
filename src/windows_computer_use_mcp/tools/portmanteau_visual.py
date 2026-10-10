@@ -104,8 +104,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                     }
                     for m in enum_monitors()
                 ]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("visual monitor enumeration failed: %s", e)
             visual_metadata = {
                 "timestamp": timestamp,
                 "engine": "opencv_tesseract_pillow",
@@ -255,8 +255,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                     finally:
                         try:
                             os.remove(temp_path)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("visual temp-file cleanup failed for %s: %s", temp_path, e)
                     avg_confidence = -1
                 else:
                     text = pytesseract.image_to_string(image, lang=language, config=ocr_config)

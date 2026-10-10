@@ -67,7 +67,8 @@ def _watcher_thread(
                             met = True
                             detail = {"title": win.window_text(), "handle": win.handle}
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("watch appear-poll skipped failing window: %s", e)
                         continue
 
             elif condition == "window_closes":
@@ -86,7 +87,8 @@ def _watcher_thread(
                             if target.lower() in win.window_text().lower():
                                 found = True
                                 break
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("watch text-poll skipped failing window: %s", e)
                             continue
                     met = not found
                     detail = {"title": target, "closed": met}
@@ -99,8 +101,8 @@ def _watcher_thread(
                             full = win.window_text()
                             met = target.lower() in full.lower()
                             detail = {"found": target if met else None}
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("watch text-match probe failed: %s", e)
                 else:
                     for win in desktop.windows():
                         try:
@@ -108,7 +110,8 @@ def _watcher_thread(
                                 met = True
                                 detail = {"title": win.window_text(), "handle": win.handle}
                                 break
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("watch element-poll skipped failing window: %s", e)
                             continue
 
             elif condition == "element_appears":
@@ -122,10 +125,11 @@ def _watcher_thread(
                                     met = True
                                     detail = {"title": child.window_text(), "handle": child.handle}
                                     break
-                            except Exception:
+                            except Exception as e:
+                                logger.debug("watch child-poll skipped failing child: %s", e)
                                 continue
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("watch element-appear poll failed: %s", e)
 
             if met:
                 with _WATCHER_LOCK:

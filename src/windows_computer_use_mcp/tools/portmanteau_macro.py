@@ -220,8 +220,8 @@ OPERATIONS:
                         buf = io.BytesIO()
                         ImageGrab.grab().save(buf, format="PNG")
                         ffmpeg_proc.stdin.write(buf.getvalue())
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("macro record frame grab failed, skipping frame: %s", e)
                 tool_name = step.get("tool", "")
                 params = step.get("params", {})
                 label = step.get("label", tool_name)
@@ -254,8 +254,8 @@ OPERATIONS:
                 try:
                     ffmpeg_proc.stdin.close()
                     ffmpeg_proc.wait(timeout=10)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("macro ffmpeg shutdown failed: %s", e)
 
             success_count = sum(1 for r in results if r["success"])
             data = {"macro_id": macro_id, "results": results, "total": len(results), "succeeded": success_count}

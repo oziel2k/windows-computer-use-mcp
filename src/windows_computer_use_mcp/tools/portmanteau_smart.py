@@ -46,8 +46,8 @@ def _scan_all_windows() -> list[dict]:
             try:
                 rect = win.rectangle()
                 info.update({"left": rect.left, "top": rect.top, "width": rect.width(), "height": rect.height()})
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("smart rect probe failed, omitting geometry: %s", e)
             children = []
             try:
                 for child in win.children(visible_only=True):
@@ -62,13 +62,16 @@ def _scan_all_windows() -> list[dict]:
                                 "handle": child.handle,
                             }
                         )
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("smart child probe failed, skipping child: %s", e)
                         continue
-            except Exception:
+            except Exception as e:
+                logger.debug("smart children enumeration failed: %s", e)
                 pass
             info["controls"] = children[:20]
             results.append(info)
-        except Exception:
+        except Exception as e:
+            logger.debug("smart window probe failed, skipping window: %s", e)
             continue
     return results
 
@@ -99,8 +102,8 @@ def _identify_apps(windows: list[dict]) -> list[dict]:
         proc_name = ""
         try:
             proc_name = (psutil.Process(pid).name() or "").lower()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("smart proc-name probe failed for pid %s: %s", pid, e)
         app_name = title
         for name, sig in _APP_SIGNATURES.items():
             if sig["class"] in cls or sig["process"] == proc_name:
@@ -178,8 +181,8 @@ OPERATIONS:
                         item = {"title": child.window_text(), "class_name": child.class_name(), "handle": child.handle}
                         try:
                             item["control_type"] = str(child.element_info.control_type)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("smart control-type probe failed: %s", e)
                         ctype = item.get("control_type", "")
                         if "Button" in ctype:
                             buttons.append(item)
@@ -189,7 +192,8 @@ OPERATIONS:
                             texts.append(item)
                         else:
                             others.append(item)
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("smart text-scan skipped failing child: %s", e)
                         continue
                 return ToolResult(
                     status="success",
@@ -232,9 +236,11 @@ OPERATIONS:
                                         "window_title": win.window_text(),
                                     }
                                 )
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("smart describe skipped failing window: %s", e)
                             continue
-                except Exception:
+                except Exception as e:
+                    logger.debug("smart describe window sweep failed: %s", e)
                     continue
             if not candidates and "button" in description.lower():
                 for win in all_windows:
@@ -261,9 +267,11 @@ OPERATIONS:
                                             "window_title": win.window_text(),
                                         }
                                     )
-                            except Exception:
+                            except Exception as e:
+                                logger.debug("smart click-target skipped failing window: %s", e)
                                 continue
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("smart click-target sweep failed: %s", e)
                         continue
             if not candidates:
                 return ToolResult(

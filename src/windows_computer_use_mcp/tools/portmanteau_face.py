@@ -484,8 +484,8 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
                     if is_temp:
                         try:
                             os.unlink(image_input)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("face temp-file cleanup failed: %s", e)
 
             # === CAPTURE OPERATION ===
             elif operation == "capture":
@@ -502,8 +502,8 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
                 if is_temp:
                     try:
                         os.unlink(image_input)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("face temp-file cleanup failed: %s", e)
 
                 return ToolResult(
                     status="success",
@@ -534,8 +534,8 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
                     if is_temp:
                         try:
                             os.unlink(image_input)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("face temp-file cleanup failed: %s", e)
                 out["matches"] = results
                 out["camera_index"] = camera_index
                 if operation == "test":
