@@ -7,6 +7,7 @@ import logging
 import logging.config
 import os
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from .transport import run_server
@@ -16,12 +17,14 @@ LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "pywinauto-mcp" 
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Configure logging before other imports to ensure proper logging setup
+# Rotating logs: an unrotated FileHandler grew to 3.4 GB in production (BUG-071).
+# 10 MB x 5 keeps diagnostics without disk spirals.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stderr),
-        logging.FileHandler(LOG_DIR / "pywinauto-mcp.log", encoding="utf-8"),
+        RotatingFileHandler(LOG_DIR / "pywinauto-mcp.log", maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"),
     ],
 )
 

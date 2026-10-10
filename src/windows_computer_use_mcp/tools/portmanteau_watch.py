@@ -14,12 +14,31 @@ import uuid
 from typing import Any
 
 from windows_computer_use_mcp.app import app
+from windows_computer_use_mcp.safety import (
+    DEFAULT_MAX_WATCHERS,
+    ENV_MAX_WATCHERS,
+    watcher_limits,
+)
 from windows_computer_use_mcp.tools.models import ToolResult
 
 logger = logging.getLogger(__name__)
 
 _WATCHERS: dict[str, dict[str, Any]] = {}
 _WATCHER_LOCK = threading.Lock()
+
+
+def watcher_census() -> dict[str, Any]:
+    """Running watcher count against the cap (for safety status)."""
+    from windows_computer_use_mcp.safety import _env_int
+
+    with _WATCHER_LOCK:
+        running = sum(1 for v in _WATCHERS.values() if v.get("status") == "running")
+        total = len(_WATCHERS)
+    return {
+        "running": running,
+        "tracked_total": total,
+        "max_watchers": _env_int(ENV_MAX_WATCHERS, DEFAULT_MAX_WATCHERS),
+    }
 
 
 def _watcher_thread(
@@ -151,8 +170,19 @@ OPERATIONS:
         if operation == "start":
             if not condition or not target:
                 return ToolResult(status="error", message="condition and target are required.")
-            wid = watcher_id or f"watch_{uuid.uuid4().hex[:8]}"
+            limits = watcher_limits()
+            interval = max(float(interval), limits["min_interval_s"])
+            timeout = min(max(float(timeout), 1.0), limits["max_timeout_s"])
             with _WATCHER_LOCK:
+                running = sum(1 for v in _WATCHERS.values() if v.get("status") == "running")
+                if running >= limits["max_watchers"]:
+                    return ToolResult(
+                        status="blocked",
+                        message=f"Watcher cap reached ({running}/{limits['max_watchers']} running).",
+                        recovery_tip="Stop a watcher (stop op) or raise "
+                        f"{ENV_MAX_WATCHERS}; list op shows the running set.",
+                    )
+                wid = watcher_id or f"watch_{uuid.uuid4().hex[:8]}"
                 _WATCHERS[wid] = {
                     "status": "running",
                     "condition": condition,

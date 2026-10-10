@@ -26,6 +26,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 from windows_computer_use_mcp.retry_policy import RetryPolicy
+from windows_computer_use_mcp.safety import with_mission_slot
 from windows_computer_use_mcp.tools.models import MissionOperationRequest, ToolResult
 
 _MISSIONS: dict[str, dict[str, Any]] = {}
@@ -134,6 +135,7 @@ def _verify_step_outcome(step: dict[str, Any], tool_result: ToolResult) -> bool:
     return True
 
 
+@with_mission_slot
 async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, label: str = "") -> ToolResult:
     """Execute a list of steps with verify + retry. Shared by run_mission and run_preset."""
     _MISSIONS[mission_id] = {"status": "running", "goal": label, "steps": steps, "started": time.time()}
