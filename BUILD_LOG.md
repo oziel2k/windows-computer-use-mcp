@@ -73,4 +73,21 @@
 - `web_sota/src/lib/use-zoom.ts` — Ctrl+Scroll zoom with localStorage
 - `web_sota/src/pages/dashboard.tsx` — data-testid dashboard + backend-dot + restart
 - `web_sota/src/components/layout/topbar.tsx` — dynamic health dot
+- `BUILD_LOG.md` - this file
+
+## 2026-10-10 - Release 0.8.0: resource hardening, presence detection, webapp gaps (opencode session with Sandra)
+
+### Audit findings fixed before build (TAURI Phase-1 A-J)
+- Operator port claimed: pywinauto-native 11237/11238 (side-by-side rule; dev 10788/10789 untouched). backend.rs BACKEND_PORT, tauri CSP, and VITE_API_ORIGIN bake all moved off the dev port.
+- `run_server.py` frozen argv used a nonexistent `--mode http` flag: the Tauri-spawned backend served MCP-streamable only, never REST, so the operator UI could never load. Now serves server:app via uvicorn in HTTP mode; stdio path unchanged.
+- Spec hardening: collect_submodules for package/fastmcp/pydantic, joserfc chain, cachetools/beartype/key_value, mcp.types, tolerant copy_metadata for optional winrt packages. The hand-maintained spec is now tracked in git (was gitignored).
+- `portmanteau_keylogger.py`: misplaced `global` made the module unimportable (tool 100 percent dead); fixed.
+- main.rs kills the backend child on ExitRequested as well as Exit. build-sidecar: venv-only pyinstaller, 5 MB size gate, frozen smoke test on :11999, stale-shadow deletion.
+- Deferred pre-existing items: biome.json v1 `preset` key rejected by biome 2.4.12 (fixed to `recommended`), face/dlib absent from venv (face tests uncollectable), WinRT OCR absent from frozen env (falls back to Tesseract), no global connection store (pages fetch individually).
+
+### Build results
+- Sidecar: windows-computer-use-backend.exe 90.8 MB, smoke PASS (REST /api/v1/health 200, safety/status with resource guards live on the frozen build).
+- NSIS: Windows Computer Use_0.8.0_x64-setup.exe 93.0 MB. MCPB: windows-computer-use-mcp-v0.8.0.mcpb 261 KB, launch check passed. Prompts gate met (system 3064 words, user 4400 words, 105 examples).
+- Full pytest on merged tree (including assfix pass-2): 149 passed. ruff clean. tsc exit 0. Biome clean after config fix.
+- Incidents: concurrent assfix refactor (47 files) paused artifact builds until committed; str(None) database-file bug found and fixed (BUG-072); uv-sync exe lock requires stopping the NSSM service for reinstalls; orphaned smoke-test processes squatted :11999 twice (reap by port before smoking).
 - `BUILD_LOG.md` — this file
