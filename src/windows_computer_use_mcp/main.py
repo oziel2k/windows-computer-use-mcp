@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Import the FastMCP app instance
 try:
-    from windows_computer_use_mcp.app import OCR_AVAILABLE, app
+    from windows_computer_use_mcp.app import OCR_AVAILABLE, app, package_version
 
     logger.info("Successfully imported FastMCP app instance")
 
@@ -111,7 +111,7 @@ def main() -> None:
         return
     try:
         logger.info("=" * 60)
-        logger.info("PyWinAuto MCP - Portmanteau Edition v0.4.2")
+        logger.info("PyWinAuto MCP - Portmanteau Edition v%s", package_version())
         logger.info("=" * 60)
         logger.info("FastMCP version: 3.4+")
         logger.info(f"OCR available: {OCR_AVAILABLE}")

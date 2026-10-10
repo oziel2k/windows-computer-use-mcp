@@ -12,6 +12,12 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
+def _fallback_version() -> str:
+    """Version when the FastMCP app instance failed to build."""
+    return "0.0.0"
+
+
 try:
     from fastmcp import FastMCP
 
@@ -35,15 +41,19 @@ try:
         version=_package_version(),
     )
 
+    package_version = _package_version
+
     logger.info("FastMCP 3.4+ app instance created successfully")
 
 except ImportError as e:
     logger.critical(f"Failed to import FastMCP: {e}")
     logger.critical("Please install FastMCP 3.4+ using: pip install fastmcp>=3.4.0")
     app = None
+    package_version = _fallback_version
 except Exception as e:
     logger.critical(f"Error creating FastMCP app: {e}", exc_info=True)
     app = None
+    package_version = _fallback_version
 
 # Check OCR dependencies
 try:
@@ -204,7 +214,7 @@ Verify:
 @app.resource("resource://automation/current_state")
 def get_current_automation_state() -> str:
     """Dynamic resource providing a snapshot of the current desktop automation environment."""
-    return f"""PyWinAuto MCP v0.4.2
+    return f"""PyWinAuto MCP v{package_version()}
 HITL Status: {"Active" if approval_state.is_approved() else "Locked"}
 OCR Available: {OCR_AVAILABLE}
 Timestamp: {time.ctime()}

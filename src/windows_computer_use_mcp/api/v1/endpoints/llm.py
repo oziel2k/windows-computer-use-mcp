@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from windows_computer_use_mcp.llm_repo_context import REPO_CONTEXT_MARKDOWN
@@ -172,3 +173,132 @@ async def refine_prompt(body: RefineRequest) -> ChatResponse:
         temperature=0.3,
     )
     return await chat_completions(req)
+
+
+_LLM_CANDIDATES = [
+    {
+        "id": "ollama",
+        "label": "Ollama",
+        "base_url": "http://127.0.0.1:11434/v1",
+        "probe_url": "http://127.0.0.1:11434/api/tags",
+        "probe_kind": "ollama-tags",
+    },
+    {
+        "id": "lmstudio",
+        "label": "LM Studio",
+        "base_url": "http://127.0.0.1:1234/v1",
+        "probe_url": "http://127.0.0.1:1234/v1/models",
+        "probe_kind": "openai-models",
+    },
+]
+
+
+async def _probe_candidate(client: httpx.AsyncClient, cand: dict[str, str]) -> dict[str, Any]:
+    """Probe one local LLM server; never raises (fail-soft for dashboards)."""
+    detected = False
+    models: list[str] = []
+    try:
+        r = await client.get(cand["probe_url"])
+        if r.status_code == 200:
+            detected = True
+            try:
+                data = r.json()
+                if cand["probe_kind"] == "ollama-tags":
+                    models = [m["name"] for m in data.get("models", [])]
+                else:
+                    models = [m["id"] for m in data.get("data", [])]
+            except Exception as e:
+                logger.debug("llm discover %s model parse failed: %s", cand["id"], e)
+    except httpx.RequestError as e:
+        logger.debug("llm discover %s not reachable: %s", cand["id"], e)
+    return {
+        "id": cand["id"],
+        "label": cand["label"],
+        "base_url": cand["base_url"],
+        "detected": detected,
+        "models": models,
+        "needs_key": False,
+    }
+
+
+@router.get("/discover")
+async def discover_providers() -> dict[str, Any]:
+    """Auto-detect local LLM providers (Ollama :11434, LM Studio :1234).
+
+    Consumed by the chat UI on mount for the provider status indicator.
+    """
+    import shutil
+
+    async with httpx.AsyncClient(timeout=2.0) as client:
+        providers = [_probe_candidate(client, c) for c in _LLM_CANDIDATES]
+        providers = [await p for p in providers]
+    return {
+        "providers": providers,
+        "gpu_present": shutil.which("nvidia-smi") is not None,
+    }
+
+
+@router.get("/onboarding")
+async def llm_onboarding() -> dict[str, Any]:
+    """Fresh-install starter facts + recommended path for the under-hero cue."""
+    disc = await discover_providers()
+    any_detected = any(p["detected"] for p in disc["providers"])
+    return {
+        "facts": [
+            "pywinauto-mcp automates native Windows UI: find windows, read elements, click, type, screenshot, OCR.",
+            "Mutating actions need approve_automation first (or BYPASS_HITL=1 for trusted runs).",
+            "Chat completions proxy through this backend; keys never leave the server.",
+        ],
+        "recommended_path": (
+            "chat is ready" if any_detected else "start Ollama (ollama serve) or LM Studio, then reload chat"
+        ),
+        "providers": disc["providers"],
+        "gpu_present": disc["gpu_present"],
+        "docs": {
+            "safety": "docs/SAFETY.md",
+            "tools": "docs/TOOLS.md",
+            "configuration": "docs/CONFIGURATION.md",
+        },
+    }
+
+
+@router.post("/chat/stream")
+async def chat_stream(body: ChatRequest) -> StreamingResponse:
+    """Proxy POST /v1/chat/completions with stream=true as SSE.
+
+    Passes upstream `data:` lines through untouched and closes with
+    `data: [DONE]`. Upstream errors arrive as `data: {"error": ...}`.
+    """
+    import json
+
+    base = _resolve_base(body.base_url)
+    url = f"{base}/chat/completions"
+    payload: dict[str, Any] = {
+        "model": body.model,
+        "messages": [m.model_dump() for m in body.messages],
+        "stream": True,
+    }
+    if body.temperature is not None:
+        payload["temperature"] = body.temperature
+
+    async def gen():  # type: ignore[no-untyped-def]
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                async with client.stream("POST", url, json=payload) as r:
+                    if r.status_code >= 400:
+                        raw = (await r.aread()).decode("utf-8", "replace")[:4000]
+                        yield f"data: {json.dumps({'error': raw})}\n\n"
+                        return
+                    async for line in r.aiter_lines():
+                        if not line.strip():
+                            continue
+                        if line.startswith(("data:", "event:", ":")) or line.strip() == "[DONE]":
+                            yield f"{line}\n\n"
+                        else:
+                            yield f"data: {line}\n\n"
+        except httpx.RequestError as e:
+            logger.warning("LLM chat stream failed: %s", e)
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
