@@ -169,6 +169,8 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # CLI prints config snippets to stdout by design (prints are the product)
 "src/windows_computer_use_mcp/cli.py" = ["T20"]
+# Interactive demo script narrates each step to the console by design
+"scripts/demo-autonomous.py" = ["T20"]
 # Archived first-gen tools: frozen, never imported (no importer in src/),
 # kept for archaeology. Silent swallows inside are historical, not live.
 "src/windows_computer_use_mcp/tools/archived/*" = ["S110", "S112"]
