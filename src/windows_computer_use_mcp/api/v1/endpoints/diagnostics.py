@@ -6,6 +6,7 @@ error state, and CUA readiness.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -69,7 +70,8 @@ async def get_diagnostics() -> dict[str, Any]:
         try:
             import subprocess
 
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 [r"C:\Program Files\Tesseract-OCR\tesseract.exe", "--version"],
                 capture_output=True,
                 text=True,
