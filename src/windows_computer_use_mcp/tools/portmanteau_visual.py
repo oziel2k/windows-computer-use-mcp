@@ -533,7 +533,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                 total_frames = int(rec_duration * rec_fps)
                 interval = rec_duration / max(total_frames, 1)
 
-                ffmpeg_path = shutil.which("ffmpeg") or r"C:\Users\sandr\scoop\shims\ffmpeg.exe"
+                scoop_ffmpeg = os.path.join(os.path.expanduser("~"), "scoop", "shims", "ffmpeg.exe")
+                ffmpeg_path = shutil.which("ffmpeg") or (scoop_ffmpeg if os.path.isfile(scoop_ffmpeg) else None)
                 if ffmpeg_path is None:
                     raise RuntimeError("ffmpeg not found. Install with: scoop install ffmpeg")
 
