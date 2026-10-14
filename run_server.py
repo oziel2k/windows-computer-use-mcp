@@ -1,7 +1,9 @@
 """PyInstaller entry point -- dual transport.
 
-Detects MCP_PORT env var (set by Tauri backend.rs) and switches to HTTP mode.
-When no env vars are set, runs stdio mode (Claude Desktop).
+HTTP mode (MCP_PORT or PORT set, e.g. by Tauri backend.rs): serve the full
+REST+MCP app (windows_computer_use_mcp.server:app) via uvicorn. That is the
+only mode that serves /api/v1/* which the operator UI needs.
+Stdio mode (no env vars): pure FastMCP for Claude Desktop.
 """
 
 import os
@@ -21,10 +23,15 @@ import _strptime  # noqa: F401
 
 import cachetools  # noqa: F401
 
-from windows_computer_use_mcp.main import main
-
 port = os.environ.get("MCP_PORT") or os.environ.get("PORT")
 if port:
     host = os.environ.get("MCP_HOST", "127.0.0.1")
-    sys.argv = ["run_server.py", "--mode", "http", "--host", host, "--port", str(port)]
-main()
+    import uvicorn
+
+    from windows_computer_use_mcp.server import app as asgi_app
+
+    uvicorn.run(asgi_app, host=host, port=int(port), log_level="info")
+else:
+    from windows_computer_use_mcp.main import main
+
+    main()

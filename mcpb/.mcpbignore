@@ -1,23 +1,16 @@
-# Fleet MCPB — no lockfiles or glama inside bundle
-
-pyproject.toml
-uv.lock
-poetry.lock
-Pipfile
-Pipfile.lock
-requirements.txt
-glama.json
-dist/
+# MCPB Pack Exclusion List
+tests/
+.git/
 __pycache__/
 *.pyc
-*.pyo
-.mypy_cache/
+.venv/
+dist/
+build/
+target/
+docs/
+scripts/
+.cursor/
+.windsurf/
 .pytest_cache/
-.ruff_cache/
 .coverage
-htmlcov/
-*.log
-.DS_Store
-Thumbs.db
-README.md
-*.bak
+Cargo.lock

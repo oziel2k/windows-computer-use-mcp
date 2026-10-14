@@ -7,11 +7,13 @@
   <a href="https://fastmcp.com"><img src="https://img.shields.io/badge/FastMCP-3.2-7c5cfc?style=flat-square" alt="FastMCP"></a>
 </p>
 
+Computer-use agent (CUA) for Windows: let an AI see and operate your desktop — click buttons, type text, read windows, run whole missions autonomously. Built on pywinauto.
+
 **A tool for agents, and an agent itself.**
 
 | You | It |
 |-----|----|
-| Use it as an **MCP server** | Claude, Cursor, DeepSeek call `automation_click`, `automation_screenshot`, `automation_ocr` — 22 tools |
+| Use it as an **MCP server** | Claude, Cursor, DeepSeek call `automation_windows`, `automation_elements`, `automation_mission` — 20 tools |
 | Use it as an **autonomous agent** | Give it a goal: `automation_mission(run="install app, verify UI, screenshot result")` — it plans, executes, retries, and reports |
 | Use it as a **webapp** | `start.ps1` opens a React dashboard at http://127.0.0.1:10788 with HITL, crawler, logging |
 | Use it as a **desktop app** | The NSIS installer bundles everything into one binary — no Python, no uv, no git needed |
@@ -29,6 +31,11 @@ Built on [pywinauto](https://github.com/pywinauto/pywinauto). Read **[docs/SAFET
 ---
 
 ## Quick Start
+
+**Claude Desktop (one line):** download
+[`install.ps1`](https://github.com/sandraschi/windows-computer-use-mcp/releases/latest/download/install.ps1)
+from the latest release, then run it — it installs the `.mcpb` bundle for you.
+Other clients: `uvx` / manual config snippets are in [INSTALL.md](INSTALL.md).
 
 | Method | Command / Config |
 |--------|-----------------|
@@ -61,6 +68,7 @@ See **[INSTALL.md](INSTALL.md)** for detailed setup. Run `just demo` for example
 | Doc | Content |
 |-----|---------|
 | [INSTALL.md](INSTALL.md) | Setup: desktop app, uv, MCP config |
+| [docs/ONBOARDING.md](docs/ONBOARDING.md) | First-timer setup: what to install, pitfalls, sanity check |
 | [docs/README.md](docs/README.md) | Full documentation hub |
 | [docs/py-stack.md](docs/py-stack.md) | Python dependency deep dive |
 | [docs/composing-with-playwright.md](docs/composing-with-playwright.md) | Browser automation with Playwright MCP |

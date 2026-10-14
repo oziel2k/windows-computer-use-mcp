@@ -13,6 +13,7 @@ import time
 from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.keyboard_send import send_hotkey, send_press
 from windows_computer_use_mcp.retry import with_retry
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import KeyboardOperationRequest, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and focus metadata.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_keyboard(request={"operation": "type", "text": "hello"}) -> {"status": "success", ...}
+- automation_keyboard(request={"operation": "hotkey", "keys": ["ctrl", "s"]}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_keyboard(request: KeyboardOperationRequest) -> ToolResult:
         """Unified keyboard input handler."""

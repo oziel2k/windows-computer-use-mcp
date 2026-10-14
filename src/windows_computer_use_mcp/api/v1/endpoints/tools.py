@@ -126,8 +126,29 @@ async def call_tool(request: ToolCallRequest) -> ToolCallResponse:
 
         logger.info(f"Calling tool via API: {request.name} with args: {request.arguments}")
 
+        # Portmanteau tools take a single `request` Pydantic model, but the
+        # webapp sends the model's FIELDS. FastMCP's call_tool spreads the
+        # dict as kwargs, which fails validation (missing `request` plus
+        # unexpected extras). Nest when the tool schema is exactly
+        # {"request": {...}} and the caller sent fields. Flat-param tools
+        # pass through untouched.
+        arguments = request.arguments or {}
+        try:
+            registered = await app.list_tools()
+            schema = {}
+            for tool in registered:
+                if str(getattr(tool, "name", "")) == request.name:
+                    raw = getattr(tool, "parameters", None) or {}
+                    if isinstance(raw, dict):
+                        schema = raw.get("properties") or {}
+                    break
+            if set(schema) == {"request"} and "request" not in arguments:
+                arguments = {"request": arguments}
+        except Exception as e:
+            logger.debug(f"Tool schema lookup failed, passing args through: {e!s}")
+
         # Execute the tool using app.call_tool (FastMCP standard)
-        result = await app.call_tool(request.name, request.arguments)
+        result = await app.call_tool(request.name, arguments)
 
         return ToolCallResponse(status="success", result=result, message=f"Tool {request.name} executed successfully")
 

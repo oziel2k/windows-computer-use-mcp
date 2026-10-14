@@ -1,9 +1,12 @@
 """UI Element Walker - Traverse Windows UI Automation tree and extract elements."""
 
+import logging
 import os
 import threading
 
 from pywinauto import Desktop
+
+logger = logging.getLogger(__name__)
 
 ENV_LOOSE_UIA = "windows_computer_use_mcp_LOOSE_UIA"
 
@@ -69,8 +72,8 @@ class UIElementWalker:
                         self.elements.append(info)
                         if len(self.elements) >= 500:
                             break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("walker element enumeration skipped entry: %s", e)
         except Exception:
             self._recurse(window, depth=0)
         if not self.elements:
@@ -102,9 +105,9 @@ class UIElementWalker:
             for child in children:
                 self._recurse(child, depth + 1)
 
-        except Exception:
+        except Exception as e:
             # Skip problematic elements
-            pass
+            logger.debug("walker recurse skipped subtree: %s", e)
 
     def _extract_element_info(self, element) -> dict | None:
         """Extract all relevant properties from element with timeout."""
@@ -144,9 +147,9 @@ class UIElementWalker:
 
                 result[0] = info
 
-            except Exception:
+            except Exception as e:
                 # Skip problematic elements
-                pass
+                logger.debug("walker extraction skipped element: %s", e)
 
         # Run extraction in a separate thread with timeout
         thread = threading.Thread(target=extract_with_timeout)
@@ -164,7 +167,7 @@ class UIElementWalker:
                 if current.control_type == "Window":
                     return current
                 current = current.parent()
-            except:
+            except Exception:
                 break
         return None
 

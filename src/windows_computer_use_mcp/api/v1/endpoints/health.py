@@ -7,6 +7,8 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from windows_computer_use_mcp.app import package_version
+
 # Create router
 router = APIRouter()
 
@@ -17,7 +19,12 @@ async def health_check() -> dict[str, Any]:
 
     Returns the current status of the PyWinAutoMCP service.
     """
-    return {"status": "ok", "service": "windows-computer-use-mcp", "version": "1.0.0", "api_version": "v1"}
+    return {
+        "status": "ok",
+        "service": "windows-computer-use-mcp",
+        "version": package_version(),
+        "api_version": "v1",
+    }
 
 
 @router.get("/status", response_model=dict[str, Any])
@@ -29,12 +36,21 @@ async def status() -> dict[str, Any]:
     return {
         "status": "ok",
         "service": "windows-computer-use-mcp",
-        "version": "1.0.0",
+        "version": package_version(),
         "api_version": "v1",
         "description": "Windows UI Automation MCP Server",
         "endpoints": [
             {"path": "/api/v1/health", "method": "GET", "description": "Health check"},
             {"path": "/api/v1/status", "method": "GET", "description": "Service status"},
+            {"path": "/api/v1/shutdown", "method": "POST", "description": "Orderly self-termination"},
+            {"path": "/api/v1/capabilities", "method": "GET", "description": "Capability shape for dashboards"},
+            {"path": "/api/v1/skills", "method": "GET", "description": "Domain skills for chat"},
+            {"path": "/api/v1/diagnostics", "method": "GET", "description": "Full diagnostics"},
+            {"path": "/api/v1/llm/discover", "method": "GET", "description": "Local LLM auto-discovery"},
+            {"path": "/api/v1/llm/onboarding", "method": "GET", "description": "Starter facts + path"},
+            {"path": "/api/v1/llm/models", "method": "GET", "description": "Model list per provider"},
+            {"path": "/api/v1/llm/chat", "method": "POST", "description": "Chat completion proxy"},
+            {"path": "/api/v1/llm/chat/stream", "method": "POST", "description": "Chat SSE stream proxy"},
             {
                 "path": "/api/v1/system/info",
                 "method": "GET",

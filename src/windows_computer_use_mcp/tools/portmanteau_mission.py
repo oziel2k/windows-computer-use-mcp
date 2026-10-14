@@ -6,6 +6,7 @@ The `run` operation decomposes a natural-language goal into steps,
 executes each with retry + verification, and returns pass/fail per step.
 """
 
+import asyncio
 import logging
 import time
 import uuid
@@ -25,6 +26,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 from windows_computer_use_mcp.retry_policy import RetryPolicy
+from windows_computer_use_mcp.safety import with_mission_slot
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import MissionOperationRequest, ToolResult
 
 _MISSIONS: dict[str, dict[str, Any]] = {}
@@ -101,7 +104,7 @@ def _call_tool(tool_name: str, params: dict) -> ToolResult:
 
     sig = inspect.signature(fn)
     if any(p.annotation is Context or str(p.annotation) == "Context" for p in sig.parameters.values()):
-        return ToolResult(status="error", message=f"Tool {tool_name} requires Context — cannot call inline")
+        return ToolResult(status="error", message=f"Tool {tool_name} requires Context - cannot call inline")
 
     try:
         request_type = None
@@ -133,6 +136,7 @@ def _verify_step_outcome(step: dict[str, Any], tool_result: ToolResult) -> bool:
     return True
 
 
+@with_mission_slot
 async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, label: str = "") -> ToolResult:
     """Execute a list of steps with verify + retry. Shared by run_mission and run_preset."""
     _MISSIONS[mission_id] = {"status": "running", "goal": label, "steps": steps, "started": time.time()}
@@ -162,11 +166,11 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
         app_path = step.get("app_path")
         if not _check_window_alive(window_handle) and app_path:
             if ctx:
-                await ctx.info(f"Window lost — re-launching {app_path}")
+                await ctx.info(f"Window lost - re-launching {app_path}")
             if _relaunch_app(app_path):
-                time.sleep(2)
+                await asyncio.sleep(2)
             else:
-                logger.warning("Could not re-launch %s — skipping step", app_path)
+                logger.warning("Could not re-launch %s - skipping step", app_path)
                 consecutive_failures += 1
                 results.append(
                     {
@@ -202,8 +206,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
             if best_strategy and tool_name in ("elements",):
                 if best_strategy in ("by_title", "by_auto_id", "by_control_id", "by_class_and_type"):
                     params["_prefer_strategy"] = best_strategy
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("mission strategy prefetch failed, using defaults: %s", e)
 
         def _try_call(_tn=tool_name, _tp=params):
             return _call_tool(_tn, _tp)
@@ -241,8 +245,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
                 error=retry_result.message if not retry_result.success else None,
                 session_id=mission_id,
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("mission telemetry persist failed: %s", e)
 
         # Self-heal: track consecutive failures
         if retry_result.success:
@@ -278,8 +282,8 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
                 if hints:
                     step_result["fleet_recovery_hints"] = hints
                     step_result["message"] = f"{step_result['message']} [fleet hints: {'; '.join(hints[:3])}]"
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("mission fleet-hints enrichment failed: %s", e)
 
         if expected and retry_result.success and isinstance(retry_result.data, dict):
             step_result["verified"] = retry_result.data.get("verify")
@@ -298,7 +302,7 @@ async def _run_steps(steps: list[dict], ctx: Context | None, mission_id: str, la
         if consecutive_failures >= _MAX_CONSECUTIVE_FAILURES:
             logger.warning("Aborting mission: %d consecutive failures", consecutive_failures)
             if ctx:
-                await ctx.info(f"Aborting — {consecutive_failures} consecutive failures.")
+                await ctx.info(f"Aborting - {consecutive_failures} consecutive failures.")
             break
 
     _MISSIONS[mission_id]["status"] = "complete"
@@ -473,7 +477,7 @@ if app is not None:
 
 WHAT IT DOES:
 This tool elevates automation from individual clicks to high-level objectives.
-Give it a natural-language goal — it decomposes into steps, executes each with
+Give it a natural-language goal - it decomposes into steps, executes each with
 retry + verification, and returns pass/fail with evidence.
 
 WHEN TO USE:
@@ -487,7 +491,15 @@ If a step fails, the mission continues with remaining steps (non-fatal).
 Use 'status' with the mission_id to review step-level results.
 RETURNS:
 A ToolResult object with mission progress, step results, and next steps.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"mission_id": str, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_mission(request={"operation": "plan", "goal": "open Notepad and type hello"}) -> {"status": "success", ...}
+- automation_mission(request={"operation": "run", "goal": "open Notepad and type hello"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_mission(request: MissionOperationRequest, ctx: Context = None) -> ToolResult:
         """Mission orchestration with autonomous execution loop."""

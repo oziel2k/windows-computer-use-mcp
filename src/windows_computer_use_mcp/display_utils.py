@@ -108,8 +108,8 @@ def enum_monitors() -> list[MonitorInfo]:
             mi.dpi_x = dpi_x.value
             mi.dpi_y = dpi_y.value
             mi.scale_factor = round(dpi_x.value / 96.0, 1)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("DPI probe failed, keeping defaults: %s", e)
 
         raw.append(mi)
         return 1
@@ -284,7 +284,7 @@ def translate_coords(x: int, y: int, monitor_index: int | None = None) -> tuple[
         monitor_index: Optional 0-based monitor index.
 
     Returns:
-        (virtual_x, virtual_y) — absolute virtual screen coordinates.
+        (virtual_x, virtual_y) - absolute virtual screen coordinates.
     """
     if monitor_index is not None:
         ox, oy = get_monitor_origin(monitor_index)

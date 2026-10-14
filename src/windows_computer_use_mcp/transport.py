@@ -137,7 +137,7 @@ def resolve_transport(args: argparse.Namespace) -> TransportType:
             return "stdio"
         if env_transport == "sse":
             logger.warning("SSE transport is deprecated. Consider using MCP_TRANSPORT=http instead.")
-        return env_transport  # type: ignore
+        return env_transport
 
 
 def resolve_config(args: argparse.Namespace) -> dict:
@@ -195,7 +195,8 @@ async def run_server_async(mcp_app, args: argparse.Namespace | None = None, serv
         try:
             import httpx
 
-            r = httpx.post(
+            r = await asyncio.to_thread(
+                httpx.post,
                 proxy_url,
                 json={
                     "jsonrpc": "2.0",
@@ -216,8 +217,8 @@ async def run_server_async(mcp_app, args: argparse.Namespace | None = None, serv
                 proxy = create_proxy(proxy_url, name=server_name)
                 await proxy.run_stdio_async(show_banner=False)
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("daemon /mcp probe failed, falling back to local transport: %s", e)
     if args is None:
         parser = create_argument_parser(server_name)
         args = parser.parse_args()

@@ -1,4 +1,4 @@
-"""CUA HUD overlay — "CUA at work" blinking red + e-stop button.
+"""CUA HUD overlay - "CUA at work" blinking red + e-stop button.
 
 Spawning a HUD:
     hud = CuaHUD()
@@ -38,7 +38,7 @@ class CuaHUD:
         try:
             import tkinter as tk
         except ImportError:
-            logger.warning("tkinter not available — HUD disabled")
+            logger.warning("tkinter not available - HUD disabled")
             return
 
         root = tk.Tk()
@@ -84,8 +84,8 @@ class CuaHUD:
                         bg = "white" if self._blink_state else "darkred"
                         self._label.configure(fg=fg, bg=bg)
                         self._root.configure(bg=bg)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("HUD blink update failed: %s", e)
                 time.sleep(0.6)
 
         blink = threading.Thread(target=_blink, daemon=True)
@@ -93,8 +93,8 @@ class CuaHUD:
 
         try:
             root.mainloop()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("HUD mainloop exited with error: %s", e)
 
     def start(self):
         """Launch HUD in background thread."""
@@ -112,8 +112,8 @@ class CuaHUD:
             try:
                 self._root.quit()
                 self._root.destroy()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("HUD teardown failed: %s", e)
 
     def _trigger_estop(self):
         self._estop.set()

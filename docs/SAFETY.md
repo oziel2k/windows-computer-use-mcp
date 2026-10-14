@@ -136,3 +136,37 @@ Session-wide keyboard hooks support **authorized** debugging and analysis (for e
 ### If you do not need it
 
 Leave **`WINDOWS_COMPUTER_USE_MCP_ENABLE_KEYLOGGER`** unset. Window, element, mouse, and normal keyboard **simulation** do not require it.
+
+---
+
+## 7. Resource hardening (host survival)
+
+UI automation can saturate a host without any single action looking wrong:
+screenshot loops, OCR batches, sampling calls, and background watchers each
+polling the full window tree add up. On 2026-10-10 a freshly enabled server
+coincided with a full hard hang (fleet BUG-071, causation unproven but taken
+seriously). The server now defends itself in four places. All bounds are env
+overridable and every rejection is a clean `blocked` with a recovery tip,
+never a silent stall.
+
+| Guard | Default | Env |
+|---|---|---|
+| Rotating server log | 10 MB x 5 | (fixed; the unrotated log once reached 3.4 GB) |
+| Max concurrent missions | 2 | `..._MAX_CONCURRENT_MISSIONS` |
+| Max running watchers | 8 | `..._MAX_WATCHERS` |
+| Min watcher poll interval | 0.5 s | `..._MIN_WATCH_INTERVAL_S` |
+| Max watcher lifetime | 3600 s | `..._MAX_WATCH_TIMEOUT_S` |
+| Mutation rate | 120/min | `..._MAX_ACTIONS_PER_MINUTE` (pre-existing) |
+
+(Full prefix: `windows_computer_use_mcp_` - see `safety.py`.)
+
+Host health is queryable, not just enforceable: `resource_snapshot()`
+(CPU/RAM via psutil, explicit `unavailable` marker when psutil is missing)
+and the watcher census both surface in `GET /api/v1/safety/status` under
+`resource` and `watchers`. Check them before long missions on loaded boxes.
+
+Wiring guidance for MCP hosts (learned the hard way): keep the server
+**disabled** in host config until needed; first contact should be the HTTP
+status endpoint, not a cold stdio spawn on a loaded machine; give stdio a
+generous timeout (missions legitimately run minutes); never enable on a box
+that already shows instability without an isolation test first.

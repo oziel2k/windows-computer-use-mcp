@@ -7,10 +7,18 @@ $DevDir = "$PSScriptRoot\binaries"
 New-Item -ItemType Directory -Force -Path $ResourceDir, $DevDir | Out-Null
 
 # Step 0: Free backend port from stale processes (sandbox-safe: no Get-Process enumeration)
+# HARDENED 2026-09-17: was a blind Start-Sleep -Seconds 2, no verification the
+# port actually freed (TRAPS_AND_PITFALLS.md #36). Poll instead.
 Get-NetTCPConnection -LocalPort 10789 -ErrorAction SilentlyContinue | ForEach-Object {
     Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
 }
-Start-Sleep -Seconds 2
+$portFreeWaitSec = 15
+$portFreeElapsed = 0
+while ($portFreeElapsed -lt $portFreeWaitSec) {
+    Start-Sleep -Milliseconds 500
+    $portFreeElapsed += 0.5
+    if (-not (Get-NetTCPConnection -LocalPort 10789 -ErrorAction SilentlyContinue)) { break }
+}
 
 Write-Host "=== ${RepoName} Tauri Release Build ===" -ForegroundColor Cyan
 
@@ -83,6 +91,12 @@ if (Test-Path $specFile) {
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
 
     # Gate: smoke-test the frozen binary (catches ALL import crashes generically)
+    # HARDENED 2026-09-17: was a fixed 5s sleep then a single HasExited check -
+    # races against PyInstaller onefile cold-start (extraction + AV scan can take
+    # longer than 5s), so Kill() could fire before a real crash ever surfaced,
+    # reading a broken binary as "PASSED" (TRAPS_AND_PITFALLS.md #36a, discovered
+    # via this exact bug in teleoperator-mcp). Poll with a real timeout and
+    # require the port to actually open, not just "hasn't crashed yet".
     $frozenExe = "$Root\dist\${RepoName}-backend.exe"
     Write-Host "  Smoke-testing frozen binary..." -ForegroundColor Yellow
     $testPort = 11999  # ephemeral port to avoid collision
@@ -91,12 +105,27 @@ if (Test-Path $specFile) {
     $env:MCP_PORT = "$testPort"
     $env:MCP_HOST = "127.0.0.1"
     $testProc = Start-Process -FilePath $frozenExe -NoNewWindow -PassThru -RedirectStandardError "$Root\dist\pyi-crash.log"
-    Start-Sleep -Seconds 5
+    $maxWaitSec = 30
+    $pollMs = 500
+    $elapsedSec = 0
+    $portReady = $false
+    while ($elapsedSec -lt $maxWaitSec) {
+        Start-Sleep -Milliseconds $pollMs
+        $elapsedSec += $pollMs / 1000
+        if ($testProc.HasExited) { break }
+        $portReady = (Test-NetConnection -ComputerName 127.0.0.1 -Port $testPort -InformationLevel Quiet -WarningAction SilentlyContinue)
+        if ($portReady) { break }
+    }
     $env:MCP_PORT = $oldPort
     $env:MCP_HOST = $oldHost
     if ($testProc.HasExited) {
-        $crash = Get-Content "$Root\dist\pyi-crash.log" -Raw
-        throw "Frozen binary crashed on launch (exit $($testProc.ExitCode)):`n$crash"
+        $crash = Get-Content "$Root\dist\pyi-crash.log" -Raw -ErrorAction SilentlyContinue
+        throw "Frozen binary crashed on launch (exit $($testProc.ExitCode)) after ${elapsedSec}s:`n$crash"
+    }
+    if (-not $portReady) {
+        $testProc.Kill()
+        $testProc.Dispose()
+        throw "Frozen binary never opened port $testPort within ${maxWaitSec}s - hung or failed silently. Check $Root\dist\pyi-crash.log"
     }
     # Clean up test process
     $testProc.Kill()

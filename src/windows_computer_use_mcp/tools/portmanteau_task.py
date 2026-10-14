@@ -1,4 +1,4 @@
-"""Task runner portmanteau — closed-loop computer use assistant."""
+"""Task runner portmanteau - closed-loop computer use assistant."""
 
 from __future__ import annotations
 
@@ -17,13 +17,14 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import TaskOperationRequest, ToolResult
 
 if app is not None:
 
     @app.tool(
         name="automation_task",
-        description="""Closed-loop task runner — the MVP computer use assistant.
+        description="""Closed-loop task runner - the MVP computer use assistant.
 
 WHAT IT DOES:
 Executes a list of steps (shortcut, dialog, wait_stable, assert_file, focus, screenshot, click, preflight)
@@ -42,7 +43,15 @@ OPERATIONS:
 - list_templates: per-app template library manifest (T2.3)
 
 See docs/CUA_ASSISTANT_TODO.md and docs/MEMOPS_CUA.md.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_task(request={"operation": "list_profiles"}) -> {"status": "success", "data": {"profiles": [...]}}
+- automation_task(request={"operation": "run", "app": "notepad.exe", "steps": [...]}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_task(request: TaskOperationRequest) -> ToolResult:
         """Task runner portmanteau."""

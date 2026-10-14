@@ -6,10 +6,60 @@ All notable changes to Windows Computer Use will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - pass-2 score-lift 2026-10-10
+
+### Fixed
+
+- **Tool docstrings (H5/H6)** - ## Return Format + ## Examples in 20/20 tool
+  files (22/22 live tools incl. app.py).
+- **Tool annotations (M9)** - annotations= on all live tools via shared
+  tools/_annotations.py (real MCP hint keys).
+- **Import cycle (found this pass)** - app.py no longer imports the tools
+  package (it silently cut registration to ~2 tools); hints inline instead.
+- **Coverage gate (H9)** - 20.4% -> 37.5%; --cov-fail-under=30 now passes
+  (13 new hardware-free tests).
 
 ### Added
 
+- **Claude plugin (M5)** - .claude-plugin/plugin.json + hooks/hooks.json.
+- **Onboarding (H12)** - docs/ONBOARDING.md + Dashboard red cue
+  (data-testid="onboarding-cue") + declared MOCK-until-onboarded UI.
+- **LLM glom-on UI (H11-FE)** - Settings auto-detect panel
+  (/api/v1/llm/discover) + global store/llm.ts.
+
+## [0.8.0] - 2026-10-10
+
+### Fixed (assfix 2026-10-10)
+
+- **Silent swallows** - removed S110/S112/E722 blanket ignores; all 55 live
+  `try/except-pass/continue` sites now log (`debug` for loop probes,
+  `warning` in API paths). `tools/archived/*` keeps a scoped ignore (frozen dead code).
+- **MCPB `${PWD}`** - root `manifest.json` uses `${__dirname}` (Claude Desktop
+  never expanded `${PWD}`; bundles failed on real installs).
+- **HTTP lifespan** - parent FastAPI enters `_mcp_http.lifespan(app)`; real
+  clients no longer get `Session terminated` while `/health` is 200.
+  Verified live: POST /mcp initialize + tools/list (20 tools) over a session.
+- **CORS regex unconditional** - Tauri/LAN origins no longer gated on an env flag.
+- **Single MCP mount** - `/mcp` only (dropped the `/` catch-all).
+- **Launcher** - `start.ps1 -BackendOnly` (zombie-port clear, TCP readiness poll
+  on `/api/v1/health`, absolute uv path); proven live with exit 0.
+- **Pydantic v2** - `.dict()` to `.model_dump()` (security_endpoints, tools/utils).
+- **Versions single-sourced** - health/diagnostics/FastAPI title read the
+  package version (`app.package_version()`); glama.json bumped to 0.8.0 (20 tools).
+
+### Added (assfix 2026-10-10)
+
+- `POST /api/v1/shutdown` (orderly NSSM restart; proven live: 200 + exit),
+  `GET /api/v1/capabilities`, `GET /api/v1/skills` (real SKILL.md content),
+  `GET /api/v1/llm/discover` (Ollama/LM Studio probe + GPU flag),
+  `GET /api/v1/llm/onboarding`, `POST /api/v1/llm/chat/stream` (SSE passthrough).
+- `docs/CONFIGURATION.md`, `docs/TROUBLESHOOTING.md`, `tests/test_meta_endpoints.py` (8 tests).
+- `just serve` recipe; `## Session Context` in `.cursorrules`; tracked
+  `pywinauto-mcp-backend.spec`; removed 12 tracked `*.bak-*` dross files.
+
+### Added
+
+- **Resource hardening (BUG-071)** - server defends itself against host saturation: rotating server log (10 MB x 5, replacing the unbounded file that once reached 3.4 GB), max 2 concurrent missions (`windows_computer_use_mcp_MAX_CONCURRENT_MISSIONS`, extra callers get clean `blocked`), watcher caps (max 8 running, 0.5 s min poll interval, 3600 s max lifetime; all env-overridable), host CPU/RAM snapshot plus watcher census in `GET /api/v1/safety/status`. New `tests/test_resource_guards.py` (6 tests). See `docs/SAFETY.md` section 7.
 - **Multi-monitor coordinate support** — `display_utils.py` provides monitor enumeration, per-monitor DPI, coordinate translation. `monitor_index` field on `automation_mouse`, `automation_visual`, and `automation_windows` resolves coordinates relative to any display. Window listing/rect/state all return which monitor the window is on.
 - **App-specific automation profiles** — YAML-based profiles define window detection, semantic shortcuts, element selectors, and launch commands for apps. Built-in profiles for Notepad and Paint. New `automation_shortcut` operations: `profile_list`, `profile_detect`, `profile_shortcut`.
 - **Computer vision module** — `computer_vision.py` provides multi-scale template matching (find_template_multi_scale), rotation-invariant ORB feature matching (find_template_feature_match), and screen region description (describe_region for agent vision loops). New `automation_visual` operations: `find_image_multi_scale`, `find_image_feature_match`, `describe_region`.
@@ -34,6 +84,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tray app now shows `R` icon during recording, lists saved macros from `~/.windows-computer-use-mcp/macros/`.
 - Mission engine decomposed: `_run_steps()` extracted as shared executor so both goal-based and preset-based missions use the same pipeline.
 - HITL status changed from `"clarification_needed"` to `"error"` — agents were ignoring the soft status. Hard error with recovery instruction is actionable.
+
+### Fixed
+
+- **`fleet-start.config.ps1` `Backend.Kind` was `'uvicorn'`, backend is NSSM, under a different name than `Name`**: the real service is `mcp-pywinauto-mcp`, not `pywinauto-mcp`, so this needed both `Kind='nssm'` and an explicit `NssmService` override (`Start-FleetNssmWebapp` falls back to `Name` only when `NssmService` isn't set, which would look for a service that doesn't exist). Without the fix, a perfectly healthy NSSM-held port got reported as blocked and the launcher exited 1 — an instacrash on plain double-click even though the service was fine. While verifying the fix, separately found `/api/v1/health` returns a real 404 even though the app is up and the path matches what `health.py`'s own route listing declares — looks like a router-mounting issue in `server.py`'s FastAPI app (the console-script entry point NSSM was launching, `windows-computer-use-mcp` → `main.py:main()`, is a *different, legacy* entry point with no REST layer at all — `--http --port` there just configures FastMCP's own transport, not the FastAPI app in `server.py`). NSSM now launches `python -m windows_computer_use_mcp.server` instead, with `PORT` set explicitly. Same `Backend.Kind` bug found and fixed across `discord-mcp`, `email-mcp`, `tvtropes-mcp` the same day.
 
 ## [0.7.0] — 2026-06-15
 

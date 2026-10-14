@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "windows-computer-use-mcp"
-version = "0.7.1"
+version = "0.8.0"
 description = "Windows Computer Use for AI Agents â€” click, screenshot, type, drag, OCR, and verify native Windows UI via MCP. FastMCP 3.2.0 agentic sampling."
 readme = "README.md"
 authors = [
@@ -73,6 +73,9 @@ windows-computer-use-mcp = "windows_computer_use_mcp.main:main"
 face = [
     "face_recognition>=1.3.0",
     "dlib>=19.24.0",
+    # face_recognition_models still does `from pkg_resources import ...`;
+    # setuptools 81+ removed pkg_resources, so pin below that here.
+    "setuptools<81",
 ]
 windowsmediaocr = [
     "winrt-runtime>=3.2",
@@ -136,8 +139,8 @@ warn_unreachable = true
 [tool.mcpb]
 name = "windows-computer-use-mcp"
 display_name = "Windows Computer Use - MCP"
-version = "0.4.2"
-description = "Windows UI automation with 8 comprehensive portmanteau tools"
+version = "0.8.0"
+description = "Windows UI automation with 20 portmanteau tools"
 entry_point = "windows_computer_use_mcp.main:app"
 
 [tool.ruff]
@@ -145,72 +148,32 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
 ignore = [
     "S101",
     "B008",
     "E501",
     "B904",
-    "S110",
-    "E722",
     "S603",
     "S607",
     "S602",
     "S301",
-    "S112",
-    "S104",
-    "S606",
-    "UP047",
-    "S101",
-    "B008",
-    "E501",
-    "B904",
-    "S110",
-    "E722",
-    "S603",
-    "S607",
-    "S602",
-    "S301",
-    "S112",
-    "S104",
-    "S606",
-    "UP047",
-    "S101",
-    "B008",
-    "E501",
-    "B904",
-    "S110",
-    "E722",
-    "S603",
-    "S607",
-    "S602",
-    "S301",
-    "S112",
-    "S104",
-    "S606",
-    "UP047",
-    "S101",
-    "B008",
-    "E501",
-    "B904",
-    "S110",
-    "E722",
-    "S603",
-    "S607",
-    "S602",
-    "S301",
-    "S112",
     "S104",
     "S606",
     "UP047",
     "RUF012",
     "RUF002", "S106",
-    "RUF002", "S324", "E402",
-    "RUF002", "S106",
-    "RUF002",
+    "S324", "E402",
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# CLI prints config snippets to stdout by design (prints are the product)
+"src/windows_computer_use_mcp/cli.py" = ["T20"]
+# Interactive demo script narrates each step to the console by design
+"scripts/demo-autonomous.py" = ["T20"]
+# Archived first-gen tools: frozen, never imported (no importer in src/),
+# kept for archaeology. Silent swallows inside are historical, not live.
+"src/windows_computer_use_mcp/tools/archived/*" = ["S110", "S112"]
 # Examples tweak sys.path before importing sibling helpers
 "examples/demo_notepad_grid.py" = ["E402"]
 "examples/demo_notepad_typewriter.py" = ["E402"]

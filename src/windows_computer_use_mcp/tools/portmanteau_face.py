@@ -15,7 +15,7 @@ SUPPORTED OPERATIONS:
 - recognize: Recognize faces in an image
 - list: List all known faces
 - delete: Delete a known face
-- capture: Capture from a local camera (OpenCV index) and recognize — use built-in or USB UVC webcam; not Tapo/IP cameras
+- capture: Capture from a local camera (OpenCV index) and recognize - use built-in or USB UVC webcam; not Tapo/IP cameras
 """
 
 import base64
@@ -194,6 +194,8 @@ class FaceRecognitionManager:
             return []
 
 
+from windows_computer_use_mcp.presence import get_monitor
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import FaceOperationRequest, ToolResult
 
 # Create global instance if available
@@ -203,6 +205,26 @@ if FACE_RECOGNITION_AVAILABLE:
         face_manager = FaceRecognitionManager()
     except Exception as e:
         logger.error(f"Failed to initialize face manager: {e}")
+
+
+def _capture_frame(camera_index: int, save_capture_path: str | None) -> tuple[bool, str, str | None, bool]:
+    """Capture one frame. Returns (ok, message, image_path, is_temp).
+
+    Temp files are the CALLER's responsibility (delete when not saved).
+    """
+    cap = cv2.VideoCapture(camera_index)
+    if not cap.isOpened():
+        return False, f"Could not open camera at index {camera_index}.", None, False
+    ret, frame = cap.read()
+    cap.release()
+    if not ret:
+        return False, "Failed to capture frame from camera.", None, False
+    if save_capture_path:
+        cv2.imwrite(save_capture_path, frame)
+        return True, "captured", save_capture_path, False
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+        cv2.imwrite(f.name, frame)
+        return True, "captured", f.name, True
 
 
 if app is not None:
@@ -219,6 +241,10 @@ WHEN TO USE:
 - Use 'add' to enroll a person into the system (e.g., for personalized automation triggers).
 - Use 'recognize' to identify individuals present in a provided image file.
 - Use 'capture' to engage a local camera (laptop built-in or USB webcam) for real-time identification.
+- Use 'presence' for human-presence detection (notebook scenario): captures, recognizes, and folds the result into an armed state machine (present / away-short inside grace / away-long past lock timeout). Coffee runs do nothing; going home recommends locking.
+- Use 'test' for a dry presence check that never locks.
+- Use 'arm' / 'disarm' / 'set_timeouts' / 'presence_status' to manage the monitor without a camera. Timeouts: grace_s (default 300), lock_timeout_s (default 900), auto_lock (default off).
+- Use 'enroll' to capture from the camera and register in one call (name + camera_index only, no image file needed).
 - Use 'list' or 'delete' for managing the local biometric database.
 
 SAFETY AND PRIVACY:
@@ -226,7 +252,15 @@ This tool operates entirely locally and requires explicit opt-in via 'windows_co
 
 RECOVERY:
 If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually the default) and ensure no other application is currently locking the device.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_face(request={"operation": "presence_status"}) -> {"status": "success", "data": {"state": "present", ...}}
+- automation_face(request={"operation": "list"}) -> {"status": "success", "data": {"faces": [...]}, ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_face(request: FaceOperationRequest) -> ToolResult:
         """Face recognition operations tracking SOTA 2026 biometric standards."""
@@ -238,6 +272,21 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
             camera_index = request.camera_index
             save_capture_path = request.save_capture_path
             tolerance = request.tolerance
+
+            # === PRESENCE STATE OPS (no camera, no dlib needed) ===
+            if operation in ("arm", "disarm", "set_timeouts", "presence_status"):
+                mon = get_monitor()
+                if operation == "arm":
+                    return ToolResult(status="success", message="Presence monitor armed.", data=mon.arm())
+                if operation == "disarm":
+                    return ToolResult(status="success", message="Presence monitor disarmed.", data=mon.disarm())
+                if operation == "set_timeouts":
+                    return ToolResult(
+                        status="success",
+                        message="Presence timeouts updated.",
+                        data=mon.set_timeouts(request.grace_s, request.lock_timeout_s, request.auto_lock),
+                    )
+                return ToolResult(status="success", message="Presence status.", data=mon.status())
 
             if not FACE_RECOGNITION_AVAILABLE:
                 return ToolResult(
@@ -396,41 +445,74 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
                     },
                 )
 
-            # === CAPTURE OPERATION ===
-            elif operation == "capture":
-                cap = cv2.VideoCapture(camera_index)
-                if not cap.isOpened():
+            # === ENROLL OPERATION (capture + add in one call) ===
+            elif operation == "enroll":
+                if not name:
                     return ToolResult(
                         status="error",
-                        message=f"Could not open camera at index {camera_index}.",
+                        message="'name' is required for 'enroll' operation.",
+                        recovery_tip="Provide the person's name; the image comes from the camera.",
+                    )
+                ok, msg, image_input, is_temp = _capture_frame(camera_index, save_capture_path)
+                if not ok:
+                    return ToolResult(
+                        status="error",
+                        message=msg,
+                        recovery_tip="Enrollment needs a working camera.",
+                    )
+                try:
+                    image = face_recognition.load_image_file(image_input)
+                    encodings = face_recognition.face_encodings(image)
+                    if not encodings:
+                        return ToolResult(
+                            status="error",
+                            message="No face found in the captured frame.",
+                            recovery_tip="Face the camera in good light and retry.",
+                        )
+                    import pickle as _pickle
+
+                    face_manager.known_faces[name] = FaceData(
+                        name=name,
+                        encoding=encodings[0].tobytes(),
+                        created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
+                        metadata={"source": "enroll", "model": face_manager.model},
+                    )
+                    file_path = face_manager.known_faces_dir / f"{name.lower().replace(' ', '_')}.pkl"
+                    data = face_manager.known_faces[name]
+                    raw = _pickle.dumps(data)
+                    if face_manager.cipher_suite:
+                        raw = face_manager.cipher_suite.encrypt(raw)
+                    with open(file_path, "wb") as f:
+                        f.write(raw)
+                    return ToolResult(
+                        status="success",
+                        message=f"Enrolled '{name}' from camera {camera_index}.",
+                        data={"name": name, "biometric_metadata": biometric_metadata},
+                    )
+                finally:
+                    if is_temp:
+                        try:
+                            os.unlink(image_input)
+                        except Exception as e:
+                            logger.debug("face temp-file cleanup failed: %s", e)
+
+            # === CAPTURE OPERATION ===
+            elif operation == "capture":
+                ok, msg, image_input, is_temp = _capture_frame(camera_index, save_capture_path)
+                if not ok:
+                    return ToolResult(
+                        status="error",
+                        message=msg,
                         recovery_tip="Check camera connections and ensure 'camera_index' is correct.",
                     )
 
-                ret, frame = cap.read()
-                cap.release()
-
-                if not ret:
-                    return ToolResult(
-                        status="error",
-                        message="Failed to capture frame from camera.",
-                        recovery_tip="Ensure the camera is not being used by another application.",
-                    )
-
-                if save_capture_path:
-                    cv2.imwrite(save_capture_path, frame)
-                    image_input = save_capture_path
-                else:
-                    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
-                        cv2.imwrite(f.name, frame)
-                        image_input = f.name
-
                 results = face_manager.recognize_faces(image_input, tolerance=tolerance)
 
-                if not save_capture_path:
+                if is_temp:
                     try:
                         os.unlink(image_input)
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.debug("face temp-file cleanup failed: %s", e)
 
                 return ToolResult(
                     status="success",
@@ -444,11 +526,41 @@ If 'capture' fails to open the camera, verify the 'camera_index' (0 is usually t
                     },
                 )
 
+            # === PRESENCE / TEST OPERATIONS (human-presence detection) ===
+            elif operation in ("presence", "test"):
+                mon = get_monitor()
+                ok, msg, image_input, is_temp = _capture_frame(camera_index, save_capture_path)
+                if not ok:
+                    return ToolResult(
+                        status="error",
+                        message=msg,
+                        recovery_tip="Presence needs a working camera. Arm/disarm and timeouts work without one.",
+                    )
+                try:
+                    results = face_manager.recognize_faces(image_input, tolerance=tolerance)
+                    out = mon.tick(results, allow_lock=(operation == "presence"))
+                finally:
+                    if is_temp:
+                        try:
+                            os.unlink(image_input)
+                        except Exception as e:
+                            logger.debug("face temp-file cleanup failed: %s", e)
+                out["matches"] = results
+                out["camera_index"] = camera_index
+                if operation == "test":
+                    out["test"] = True
+                    out["note"] = "Test never locks the workstation."
+                return ToolResult(
+                    status="success",
+                    message=f"Presence check: {out.get('status', '?')}.",
+                    data={**out, "biometric_metadata": biometric_metadata},
+                )
+
             else:
                 return ToolResult(
                     status="error",
                     message=f"Unknown face operation: {operation}",
-                    recovery_tip="Supported operations are: add, recognize, list, delete, capture.",
+                    recovery_tip="Supported operations are: add, recognize, list, delete, capture, enroll, presence, test, arm, disarm, set_timeouts, presence_status.",
                 )
 
         except Exception as e:

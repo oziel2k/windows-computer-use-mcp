@@ -1,0 +1,1 @@
+{"description": "Windows desktop automation (pywinauto) - window, element, input, OCR and mission tools.", "hooks": "../hooks/hooks.json", "name": "windows-computer-use-mcp", "version": "0.8.0"}

@@ -60,3 +60,11 @@
 **Start Here:** `D:\Dev\repos\mcp-central-docs\README.md`
 
 **When in doubt:** Read the central README and navigate from there.
+
+## Session Context (windows-computer-use-mcp)
+
+Before starting work: recall this server exposes 18 portmanteau tools
+(automation_windows/elements/mouse/keyboard/visual/dialog/shortcut/task/mission/smart/macro/watch,
+automation_system, get_desktop_state, get_window_state, approve_automation, automation_safety).
+Mutating actions need approve_automation first (or BYPASS_HITL=1 for trusted runs).
+At end of work: verify with `uv run --no-sync ruff check src/` + pytest, commit per AGENTS.md.

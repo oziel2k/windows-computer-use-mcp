@@ -36,6 +36,7 @@ except ImportError as e:
     logger.error(f"Failed to import FastMCP app in portmanteau_visual: {e}")
     app = None
 from windows_computer_use_mcp.display_utils import enum_monitors, get_monitor_by_index
+from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult, VisualOperationRequest
 
 # Try to import OCR
@@ -66,7 +67,15 @@ WHEN TO USE:
 
 RECOVERY AND AMBIGUITY:
 If 'find_image' fails to meet the confidence threshold (default 0.8), consider decreasing the 'threshold' parameter or verifying that the template image is not resolution-dependent. If OCR results are noisy, ensure the target region coordinates are precisely bounded or use 'ocr_config' to specify page segmentation modes.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"screenshot_base64": str, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_visual(request={"operation": "screenshot"}) -> {"status": "success", "data": {"screenshot_base64": "..."}}
+- automation_visual(request={"operation": "extract_text", "region_left": 0, "region_top": 0, "region_right": 800, "region_bottom": 600}) -> {"status": "success", ...}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def automation_visual(request: VisualOperationRequest) -> ToolResult:
         """Comprehensive visual automation tool for screenshots, OCR, and image recognition."""
@@ -104,8 +113,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                     }
                     for m in enum_monitors()
                 ]
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("visual monitor enumeration failed: %s", e)
             visual_metadata = {
                 "timestamp": timestamp,
                 "engine": "opencv_tesseract_pillow",
@@ -114,7 +123,7 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                 "monitors": monitors,
             }
 
-            # Build region tuple — support monitor_index for per-monitor capture
+            # Build region tuple - support monitor_index for per-monitor capture
             region = None
             mi = None
             if request.monitor_index is not None:
@@ -255,8 +264,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                     finally:
                         try:
                             os.remove(temp_path)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.debug("visual temp-file cleanup failed for %s: %s", temp_path, e)
                     avg_confidence = -1
                 else:
                     text = pytesseract.image_to_string(image, lang=language, config=ocr_config)
@@ -266,7 +275,7 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                         )
                         confidences = [float(c) for c in data["conf"] if float(c) > 0]
                         avg_confidence = sum(confidences) / len(confidences) if confidences else 0
-                    except:
+                    except Exception:
                         avg_confidence = -1
 
                 return ToolResult(
@@ -524,7 +533,8 @@ If 'find_image' fails to meet the confidence threshold (default 0.8), consider d
                 total_frames = int(rec_duration * rec_fps)
                 interval = rec_duration / max(total_frames, 1)
 
-                ffmpeg_path = shutil.which("ffmpeg") or r"C:\Users\sandr\scoop\shims\ffmpeg.exe"
+                scoop_ffmpeg = os.path.join(os.path.expanduser("~"), "scoop", "shims", "ffmpeg.exe")
+                ffmpeg_path = shutil.which("ffmpeg") or (scoop_ffmpeg if os.path.isfile(scoop_ffmpeg) else None)
                 if ffmpeg_path is None:
                     raise RuntimeError("ffmpeg not found. Install with: scoop install ffmpeg")
 

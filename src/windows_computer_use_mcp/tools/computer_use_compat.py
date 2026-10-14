@@ -5,6 +5,7 @@ import time
 
 try:
     from windows_computer_use_mcp.app import app
+    from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
     from windows_computer_use_mcp.tools.models import ToolResult, VisualOperationRequest
     from windows_computer_use_mcp.tools.portmanteau_visual import automation_visual
 
@@ -23,7 +24,14 @@ if app is not None:
 
 Requires window_handle (HWND). Does not activate the window when windows_computer_use_mcp_DISPATCH=background.
 Wraps automation_visual(screenshot) with return_base64=true.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"screenshot_base64": str, "compat": str}, "recovery_tip": str | null}
+
+## Examples
+- cua_computer_use_screenshot(window_handle=123456) -> {"status": "success", "data": {"screenshot_base64": "...", ...}}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def cua_computer_use_screenshot(
         window_handle: int,

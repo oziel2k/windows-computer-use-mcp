@@ -24,6 +24,7 @@ from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.dispatch import BACKGROUND_UNAVAILABLE, click_element, resolve_dispatch
 from windows_computer_use_mcp.snapshot_store import get_snapshot_store
 from windows_computer_use_mcp.telemetry import log_action
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ElementOperationRequest, ToolResult
 from windows_computer_use_mcp.trajectory import log_trajectory
 from windows_computer_use_mcp.win32_mouse import (
@@ -81,7 +82,8 @@ def _ocr_find_element(desktop, window, window_handle: int, hint_selector: dict) 
                 txt = child.window_text()
                 if title_hint in txt.lower():
                     return child
-            except Exception:
+            except Exception as e:
+                logger.debug("title-hint child probe failed, trying next: %s", e)
                 continue
         return None
     except Exception:
@@ -128,8 +130,8 @@ def _verify_action_result(
                     from windows_computer_use_mcp.win32_window import get_window_bbox
 
                     get_window_bbox(window_handle)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("bbox warmup probe failed for hwnd %s: %s", window_handle, e)
 
                 ok, actual_text = assert_text_in_image(
                     image_path=None,
@@ -198,8 +200,8 @@ def _get_element_info(element) -> dict[str, Any]:
             info["y"] = rect.top
             info["width"] = rect.width()
             info["height"] = rect.height()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("element rect probe failed, omitting geometry: %s", e)
 
         # Element type detection
         if ButtonWrapper and isinstance(element, ButtonWrapper):
@@ -208,16 +210,16 @@ def _get_element_info(element) -> dict[str, Any]:
             info["element_type"] = "edit"
             try:
                 info["is_readonly"] = element.is_read_only()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("read-only probe failed, omitting field: %s", e)
         elif ComboBoxWrapper and isinstance(element, ComboBoxWrapper):
             info["element_type"] = "combobox"
             try:
                 info["items"] = element.item_texts()
                 info["selected_index"] = element.selected_index()
                 info["selected_text"] = element.selected_text()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("combobox items probe failed, omitting fields: %s", e)
 
     except Exception as e:
         logger.warning(f"Error getting element info: {e}")
@@ -284,8 +286,8 @@ def _operate_snapshot_element(request: ElementOperationRequest, snap_elem: dict,
             if operation == "right_click" and meta.get("method") not in ("postmessage",):
                 try:
                     element.click(button="right")
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("direct right-click failed, keeping snapshot path: %s", e)
             return ToolResult(
                 status="success",
                 message=f"Snapshot {operation} via {meta.get('method')} ({meta.get('dispatch')})",
@@ -363,7 +365,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and element data.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_elements(request={"window_handle": 123456, "operation": "list"}) -> {"status": "success", "message": "Listed 40 elements.", ...}
+- automation_elements(request={"window_handle": 123456, "operation": "click", "title": "Save"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_elements(request: ElementOperationRequest) -> ToolResult:
         """Unified UI element interaction handler."""
@@ -435,8 +445,8 @@ A ToolResult object containing standardized outcome, message, and element data.
                             elem_info = _get_element_info(child)
                             elem_info["children"] = get_children_recursive(child, depth + 1)
                             elements.append(elem_info)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("child enumeration skipped failing subtree: %s", e)
                     return elements
 
                 elements = get_children_recursive(window)

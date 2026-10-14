@@ -1,7 +1,7 @@
 """Mouse interaction portmanteau tool for PyWinAuto MCP.
 
 Pointer injection uses :mod:`windows_computer_use_mcp.win32_mouse` (``SetCursorPos`` +
-``mouse_event``) with per-monitor DPI awareness — not raw PyAutoGUI — so move,
+``mouse_event``) with per-monitor DPI awareness - not raw PyAutoGUI - so move,
 click, and drag match screen coordinates reliably on scaled displays.
 """
 
@@ -18,6 +18,7 @@ from windows_computer_use_mcp.display_utils import (
     translate_coords,
     virtual_screen_size,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import MouseOperationRequest, ToolResult
 from windows_computer_use_mcp.win32_mouse import (
     ButtonName,
@@ -44,7 +45,7 @@ if app is not None:
 
 WHAT IT DOES:
 Moves, clicks, drags, and scrolls using **Win32** ``SetCursorPos`` / ``mouse_event``
-(DPI-aware), not PyAutoGUI alone — reliable move/click/drag on scaled monitors.
+(DPI-aware), not PyAutoGUI alone - reliable move/click/drag on scaled monitors.
 
 WHEN TO USE:
 - Use 'position' to get current screen coordinates before planning a movement.
@@ -60,7 +61,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and movement data.
+
+## Return Format
+{"status": "success" | "error" | "blocked", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_mouse(request={"operation": "position"}) -> {"status": "success", "data": {"x": 960, "y": 540, ...}}
+- automation_mouse(request={"operation": "click", "x": 960, "y": 540}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_mouse(request: MouseOperationRequest) -> ToolResult:
         """Unified mouse control handler."""

@@ -1,4 +1,4 @@
-"""Session recording / macros — record, replay, and verify UI automation sequences.
+"""Session recording / macros - record, replay, and verify UI automation sequences.
 
 PORTMANTEAU PATTERN RATIONALE:
 Consolidates macro operations (record, stop, replay, replay_with_verify, list)
@@ -18,6 +18,7 @@ from typing import Any
 from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.mission_store import _persist_dir
 from windows_computer_use_mcp.retry_policy import RetryPolicy
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult
 
 logger = logging.getLogger(__name__)
@@ -98,7 +99,15 @@ OPERATIONS:
 - replay: Execute a saved macro step by step.
 - replay_with_verify: Replay and verify each step matches the recorded outcome.
 - list: List saved macros with metadata.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_macro(operation="record", name="login-flow") -> {"status": "success", ...}
+- automation_macro(operation="replay", name="login-flow") -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_macro(
         operation: str,
@@ -220,8 +229,8 @@ OPERATIONS:
                         buf = io.BytesIO()
                         ImageGrab.grab().save(buf, format="PNG")
                         ffmpeg_proc.stdin.write(buf.getvalue())
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("macro record frame grab failed, skipping frame: %s", e)
                 tool_name = step.get("tool", "")
                 params = step.get("params", {})
                 label = step.get("label", tool_name)
@@ -254,8 +263,8 @@ OPERATIONS:
                 try:
                     ffmpeg_proc.stdin.close()
                     ffmpeg_proc.wait(timeout=10)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("macro ffmpeg shutdown failed: %s", e)
 
             success_count = sum(1 for r in results if r["success"])
             data = {"macro_id": macro_id, "results": results, "total": len(results), "succeeded": success_count}

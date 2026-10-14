@@ -21,6 +21,7 @@ except ImportError as e:
 # Import desktop state capture functionality and models
 try:
     from windows_computer_use_mcp.desktop_state import DesktopStateCapture
+    from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
     from windows_computer_use_mcp.tools.models import DesktopStateRequest, ToolResult
 
     logger.info("Successfully imported desktop state capture functionality and models")
@@ -48,7 +49,15 @@ WHEN TO USE:
 
 RECOVERY:
 If the UI tree is exceptionally deep, increase 'max_depth' or target a specific window first using 'automation_windows'. If capture is slow, decrease 'max_depth' or disable 'use_ocr'.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"element_count": int, ...}, "recovery_tip": str | null}
+
+## Examples
+- get_desktop_state(request={"max_depth": 5}) -> {"status": "success", "message": "Desktop state capture completed: 120 elements found", ...}
+- get_desktop_state(request={"capture_mode": "ax", "use_ocr": False}) -> {"status": "success", ...}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def get_desktop_state(request: DesktopStateRequest) -> ToolResult:
         """Captures the current desktop state including UI elements and visual metadata."""

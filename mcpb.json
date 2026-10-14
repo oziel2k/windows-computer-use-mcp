@@ -1,6 +1,6 @@
 {
   "name": "windows-computer-use-mcp",
-  "version": "0.4.2",
+  "version": "0.8.0",
   "type": "server",
   "runtime": "python",
   "entry_point": "src/windows_computer_use_mcp/server.py",

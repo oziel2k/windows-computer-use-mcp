@@ -1,0 +1,888 @@
+[
+  {
+    "tool": "analyze_winapp",
+    "operation": "crawl",
+    "arguments": {
+      "window_title": "Settings",
+      "max_depth": 5
+    },
+    "expect": "element map + report paths"
+  },
+  {
+    "tool": "analyze_winapp",
+    "operation": "discover",
+    "arguments": {
+      "window_title": "Paint"
+    },
+    "expect": "shortcut probe results"
+  },
+  {
+    "tool": "analyze_winapp",
+    "operation": "portfolio",
+    "arguments": {
+      "window_title": "Notepad",
+      "states": [
+        "main",
+        "about"
+      ]
+    },
+    "expect": "named screenshots"
+  },
+  {
+    "tool": "analyze_winapp",
+    "operation": "crawl",
+    "arguments": {
+      "window_title": "Calculator",
+      "output_dir": "./calc_map"
+    },
+    "expect": "report in output dir"
+  },
+  {
+    "tool": "analyze_winapp",
+    "operation": "discover",
+    "arguments": {
+      "window_title": "VLC"
+    },
+    "expect": "before/after states per shortcut"
+  },
+  {
+    "tool": "approve_automation",
+    "operation": "approve",
+    "arguments": {
+      "duration_minutes": 10
+    },
+    "expect": "safe window timestamp"
+  },
+  {
+    "tool": "approve_automation",
+    "operation": "approve",
+    "arguments": {
+      "duration_minutes": 1
+    },
+    "expect": "short window for one dialog"
+  },
+  {
+    "tool": "approve_automation",
+    "operation": "approve",
+    "arguments": {
+      "duration_minutes": 60
+    },
+    "expect": "hour window for migration"
+  },
+  {
+    "tool": "approve_automation",
+    "operation": "approve",
+    "arguments": {
+      "duration_minutes": 5
+    },
+    "expect": "window for installer clicks"
+  },
+  {
+    "tool": "approve_automation",
+    "operation": "approve",
+    "arguments": {
+      "duration_minutes": 30
+    },
+    "expect": "window for batch run"
+  },
+  {
+    "tool": "automation_assert",
+    "operation": "wait_stable",
+    "arguments": {
+      "timeout_s": 10
+    },
+    "expect": "stable snapshot paths"
+  },
+  {
+    "tool": "automation_assert",
+    "operation": "assert_changed",
+    "arguments": {
+      "image_path": "a.png",
+      "image_path_b": "b.png",
+      "change_threshold_pct": 5
+    },
+    "expect": "pass + changed_pct"
+  },
+  {
+    "tool": "automation_assert",
+    "operation": "assert_unchanged",
+    "arguments": {
+      "image_path": "a.png",
+      "image_path_b": "b.png"
+    },
+    "expect": "pass on no-op"
+  },
+  {
+    "tool": "automation_assert",
+    "operation": "assert_text",
+    "arguments": {
+      "image_path": "dlg.png",
+      "expected_text": "Export complete"
+    },
+    "expect": "OCR match result"
+  },
+  {
+    "tool": "automation_assert",
+    "operation": "diff",
+    "arguments": {
+      "image_path": "a.png",
+      "image_path_b": "b.png",
+      "output_path": "diff.png"
+    },
+    "expect": "heatmap path"
+  },
+  {
+    "tool": "automation_dialog",
+    "operation": "submit_path",
+    "arguments": {
+      "path": "D:\\out\\report.docx"
+    },
+    "expect": "dialog confirmed"
+  },
+  {
+    "tool": "automation_dialog",
+    "operation": "set_path",
+    "arguments": {
+      "path": "D:\\out\\report.docx"
+    },
+    "expect": "path filled, unconfirmed"
+  },
+  {
+    "tool": "automation_dialog",
+    "operation": "confirm",
+    "arguments": {},
+    "expect": "enter pressed"
+  },
+  {
+    "tool": "automation_dialog",
+    "operation": "submit_path",
+    "arguments": {
+      "path": "D:\\out\\a.png",
+      "use_clipboard": true
+    },
+    "expect": "clipboard paste flow"
+  },
+  {
+    "tool": "automation_dialog",
+    "operation": "submit_path",
+    "arguments": {
+      "path": "D:\\out\\a.png",
+      "select_all_first": true
+    },
+    "expect": "select-all flow"
+  },
+  {
+    "tool": "automation_elements",
+    "operation": "list",
+    "arguments": {
+      "window_handle": 123456,
+      "max_depth": 4
+    },
+    "expect": "element tree"
+  },
+  {
+    "tool": "automation_elements",
+    "operation": "click",
+    "arguments": {
+      "window_handle": 123456,
+      "title": "Save",
+      "control_type": "Button"
+    },
+    "expect": "click ok"
+  },
+  {
+    "tool": "automation_elements",
+    "operation": "set_text",
+    "arguments": {
+      "window_handle": 123456,
+      "title": "Email",
+      "text": "a@b.c"
+    },
+    "expect": "text entered"
+  },
+  {
+    "tool": "automation_elements",
+    "operation": "get_text",
+    "arguments": {
+      "window_handle": 123456,
+      "title": "Total"
+    },
+    "expect": "control text"
+  },
+  {
+    "tool": "automation_elements",
+    "operation": "exists",
+    "arguments": {
+      "window_handle": 123456,
+      "title": "Export",
+      "timeout": 10
+    },
+    "expect": "found flag"
+  },
+  {
+    "tool": "automation_keyboard",
+    "operation": "type",
+    "arguments": {
+      "text": "hello world"
+    },
+    "expect": "typed"
+  },
+  {
+    "tool": "automation_keyboard",
+    "operation": "press",
+    "arguments": {
+      "key": "enter"
+    },
+    "expect": "pressed"
+  },
+  {
+    "tool": "automation_keyboard",
+    "operation": "hotkey",
+    "arguments": {
+      "keys": [
+        "ctrl",
+        "s"
+      ]
+    },
+    "expect": "saved"
+  },
+  {
+    "tool": "automation_keyboard",
+    "operation": "hotkey",
+    "arguments": {
+      "keys": [
+        "ctrl",
+        "a"
+      ]
+    },
+    "expect": "selected all"
+  },
+  {
+    "tool": "automation_keyboard",
+    "operation": "press",
+    "arguments": {
+      "key": "escape"
+    },
+    "expect": "dismissed"
+  },
+  {
+    "tool": "automation_macro",
+    "operation": "record",
+    "arguments": {},
+    "expect": "recording started"
+  },
+  {
+    "tool": "automation_macro",
+    "operation": "stop",
+    "arguments": {
+      "name": "morning-open"
+    },
+    "expect": "macro saved"
+  },
+  {
+    "tool": "automation_macro",
+    "operation": "replay",
+    "arguments": {
+      "name": "morning-open"
+    },
+    "expect": "replayed with evidence"
+  },
+  {
+    "tool": "automation_macro",
+    "operation": "replay_with_verify",
+    "arguments": {
+      "name": "morning-open"
+    },
+    "expect": "verified replay"
+  },
+  {
+    "tool": "automation_macro",
+    "operation": "list",
+    "arguments": {},
+    "expect": "saved macros"
+  },
+  {
+    "tool": "automation_mission",
+    "operation": "run",
+    "arguments": {
+      "goal": "Install VLC and verify it opens"
+    },
+    "expect": "pass/fail + evidence"
+  },
+  {
+    "tool": "automation_mission",
+    "operation": "plan",
+    "arguments": {
+      "goal": "Migrate docs to new folder"
+    },
+    "expect": "step list, no execution"
+  },
+  {
+    "tool": "automation_mission",
+    "operation": "status",
+    "arguments": {
+      "mission_id": "m1"
+    },
+    "expect": "progress report"
+  },
+  {
+    "tool": "automation_mission",
+    "operation": "cancel",
+    "arguments": {
+      "mission_id": "m1"
+    },
+    "expect": "cancelled"
+  },
+  {
+    "tool": "automation_mission",
+    "operation": "run",
+    "arguments": {
+      "goal": "Export report to PDF",
+      "timeout": 300
+    },
+    "expect": "evidence trail"
+  },
+  {
+    "tool": "automation_mouse",
+    "operation": "click",
+    "arguments": {
+      "x": 500,
+      "y": 300
+    },
+    "expect": "clicked"
+  },
+  {
+    "tool": "automation_mouse",
+    "operation": "double_click",
+    "arguments": {
+      "x": 500,
+      "y": 300
+    },
+    "expect": "opened"
+  },
+  {
+    "tool": "automation_mouse",
+    "operation": "drag",
+    "arguments": {
+      "x": 100,
+      "y": 100,
+      "target_x": 400,
+      "target_y": 400
+    },
+    "expect": "dragged"
+  },
+  {
+    "tool": "automation_mouse",
+    "operation": "scroll",
+    "arguments": {
+      "amount": -3
+    },
+    "expect": "scrolled"
+  },
+  {
+    "tool": "automation_mouse",
+    "operation": "position",
+    "arguments": {},
+    "expect": "cursor coordinates"
+  },
+  {
+    "tool": "automation_shortcut",
+    "operation": "send",
+    "arguments": {
+      "app": "notepad",
+      "action": "save"
+    },
+    "expect": "saved + stable"
+  },
+  {
+    "tool": "automation_shortcut",
+    "operation": "send",
+    "arguments": {
+      "app": "vroidstudio",
+      "action": "export_vrm"
+    },
+    "expect": "export started"
+  },
+  {
+    "tool": "automation_shortcut",
+    "operation": "list",
+    "arguments": {
+      "app": "paint"
+    },
+    "expect": "shortcut catalog"
+  },
+  {
+    "tool": "automation_shortcut",
+    "operation": "describe",
+    "arguments": {
+      "app": "notepad",
+      "action": "save"
+    },
+    "expect": "keys + metadata"
+  },
+  {
+    "tool": "automation_shortcut",
+    "operation": "send",
+    "arguments": {
+      "app": "paint",
+      "action": "save"
+    },
+    "expect": "saved"
+  },
+  {
+    "tool": "automation_smart",
+    "operation": "click",
+    "arguments": {
+      "query": "the Save button"
+    },
+    "expect": "clicked across windows"
+  },
+  {
+    "tool": "automation_smart",
+    "operation": "discover",
+    "arguments": {
+      "query": "paint"
+    },
+    "expect": "app inventory"
+  },
+  {
+    "tool": "automation_smart",
+    "operation": "list_apps",
+    "arguments": {},
+    "expect": "running apps + handles"
+  },
+  {
+    "tool": "automation_smart",
+    "operation": "list_controls",
+    "arguments": {
+      "window_handle": 123456
+    },
+    "expect": "controls"
+  },
+  {
+    "tool": "automation_smart",
+    "operation": "click",
+    "arguments": {
+      "query": "the Export menu item"
+    },
+    "expect": "clicked with OCR fallback"
+  },
+  {
+    "tool": "automation_system",
+    "operation": "status",
+    "arguments": {},
+    "expect": "server health"
+  },
+  {
+    "tool": "automation_system",
+    "operation": "info",
+    "arguments": {},
+    "expect": "CPU/RAM/GPU telemetry"
+  },
+  {
+    "tool": "automation_system",
+    "operation": "wait_for_window",
+    "arguments": {
+      "title": "Setup",
+      "timeout": 60
+    },
+    "expect": "window appeared"
+  },
+  {
+    "tool": "automation_system",
+    "operation": "clipboard_set",
+    "arguments": {
+      "text": "D:\\long\\path\\file.txt"
+    },
+    "expect": "clipboard set"
+  },
+  {
+    "tool": "automation_system",
+    "operation": "start_app",
+    "arguments": {
+      "app_path": "C:\\Windows\\notepad.exe"
+    },
+    "expect": "launched"
+  },
+  {
+    "tool": "automation_task",
+    "operation": "run",
+    "arguments": {
+      "app": "vroidstudio",
+      "steps": [
+        {
+          "shortcut": "export_vrm"
+        },
+        {
+          "dialog": "submit"
+        }
+      ],
+      "task_id": "t1"
+    },
+    "expect": "evidence trail"
+  },
+  {
+    "tool": "automation_task",
+    "operation": "status",
+    "arguments": {
+      "task_id": "t1"
+    },
+    "expect": "session progress"
+  },
+  {
+    "tool": "automation_task",
+    "operation": "cancel",
+    "arguments": {
+      "task_id": "t1"
+    },
+    "expect": "cancelled"
+  },
+  {
+    "tool": "automation_task",
+    "operation": "list_profiles",
+    "arguments": {},
+    "expect": "app profiles"
+  },
+  {
+    "tool": "automation_task",
+    "operation": "list_templates",
+    "arguments": {
+      "app": "vroidstudio"
+    },
+    "expect": "template manifest"
+  },
+  {
+    "tool": "automation_visual",
+    "operation": "screenshot",
+    "arguments": {
+      "output_path": "s.png"
+    },
+    "expect": "screenshot path"
+  },
+  {
+    "tool": "automation_visual",
+    "operation": "extract_text",
+    "arguments": {
+      "image_path": "s.png",
+      "region_left": 10,
+      "region_top": 10,
+      "region_right": 400,
+      "region_bottom": 60
+    },
+    "expect": "OCR text"
+  },
+  {
+    "tool": "automation_visual",
+    "operation": "find_image",
+    "arguments": {
+      "image_path": "s.png",
+      "template_path": "btn.png"
+    },
+    "expect": "match coordinates"
+  },
+  {
+    "tool": "automation_visual",
+    "operation": "highlight",
+    "arguments": {
+      "image_path": "s.png",
+      "region_left": 10,
+      "region_top": 10,
+      "region_right": 100,
+      "region_bottom": 40
+    },
+    "expect": "highlighted image"
+  },
+  {
+    "tool": "automation_visual",
+    "operation": "describe_region",
+    "arguments": {
+      "image_path": "s.png"
+    },
+    "expect": "region description"
+  },
+  {
+    "tool": "automation_watch",
+    "operation": "start",
+    "arguments": {
+      "condition": "window_appears",
+      "target": "Render complete",
+      "timeout": 600
+    },
+    "expect": "watcher_id"
+  },
+  {
+    "tool": "automation_watch",
+    "operation": "status",
+    "arguments": {
+      "watcher_id": "watch_abc"
+    },
+    "expect": "triggered flag"
+  },
+  {
+    "tool": "automation_watch",
+    "operation": "stop",
+    "arguments": {
+      "watcher_id": "watch_abc"
+    },
+    "expect": "stopped"
+  },
+  {
+    "tool": "automation_watch",
+    "operation": "list",
+    "arguments": {},
+    "expect": "active watchers"
+  },
+  {
+    "tool": "automation_watch",
+    "operation": "start",
+    "arguments": {
+      "condition": "text_appears",
+      "target": "Done",
+      "timeout": 120
+    },
+    "expect": "watcher_id"
+  },
+  {
+    "tool": "automation_windows",
+    "operation": "list",
+    "arguments": {},
+    "expect": "windows + handles"
+  },
+  {
+    "tool": "automation_windows",
+    "operation": "find",
+    "arguments": {
+      "title": "Invoice",
+      "partial": true
+    },
+    "expect": "handle"
+  },
+  {
+    "tool": "automation_windows",
+    "operation": "focus",
+    "arguments": {
+      "handle": 123456
+    },
+    "expect": "foreground"
+  },
+  {
+    "tool": "automation_windows",
+    "operation": "manage",
+    "arguments": {
+      "handle": 123456,
+      "action": "maximize"
+    },
+    "expect": "maximized"
+  },
+  {
+    "tool": "automation_windows",
+    "operation": "manage",
+    "arguments": {
+      "handle": 123456,
+      "action": "close"
+    },
+    "expect": "closed"
+  },
+  {
+    "tool": "cua_computer_use_screenshot",
+    "operation": "shot",
+    "arguments": {
+      "window_handle": 123456
+    },
+    "expect": "base64 image"
+  },
+  {
+    "tool": "cua_computer_use_screenshot",
+    "operation": "shot",
+    "arguments": {
+      "window_handle": 123456,
+      "format": "jpg"
+    },
+    "expect": "jpg capture"
+  },
+  {
+    "tool": "cua_computer_use_screenshot",
+    "operation": "shot",
+    "arguments": {
+      "window_handle": 789
+    },
+    "expect": "second window"
+  },
+  {
+    "tool": "cua_computer_use_screenshot",
+    "operation": "shot",
+    "arguments": {
+      "window_handle": 123456
+    },
+    "expect": "grounding frame"
+  },
+  {
+    "tool": "cua_computer_use_screenshot",
+    "operation": "shot",
+    "arguments": {
+      "window_handle": 321
+    },
+    "expect": "dialog capture"
+  },
+  {
+    "tool": "get_desktop_state",
+    "operation": "scan",
+    "arguments": {
+      "max_depth": 3
+    },
+    "expect": "desktop tree"
+  },
+  {
+    "tool": "get_desktop_state",
+    "operation": "scan",
+    "arguments": {
+      "max_depth": 5,
+      "use_vision": true
+    },
+    "expect": "tree + screenshots"
+  },
+  {
+    "tool": "get_desktop_state",
+    "operation": "scan",
+    "arguments": {
+      "max_depth": 2,
+      "use_ocr": true
+    },
+    "expect": "tree + OCR text"
+  },
+  {
+    "tool": "get_desktop_state",
+    "operation": "scan",
+    "arguments": {
+      "max_depth": 4
+    },
+    "expect": "deep inventory"
+  },
+  {
+    "tool": "get_desktop_state",
+    "operation": "scan",
+    "arguments": {
+      "max_depth": 3,
+      "capture_mode": "ax"
+    },
+    "expect": "tree only, fast"
+  },
+  {
+    "tool": "get_window_state",
+    "operation": "snapshot",
+    "arguments": {
+      "window_handle": 123456
+    },
+    "expect": "elements + screenshot"
+  },
+  {
+    "tool": "get_window_state",
+    "operation": "snapshot",
+    "arguments": {
+      "window_handle": 123456,
+      "capture_mode": "som"
+    },
+    "expect": "annotated snapshot"
+  },
+  {
+    "tool": "get_window_state",
+    "operation": "snapshot",
+    "arguments": {
+      "window_handle": 123456,
+      "max_depth": 6
+    },
+    "expect": "deep elements"
+  },
+  {
+    "tool": "get_window_state",
+    "operation": "snapshot",
+    "arguments": {
+      "window_handle": 123456,
+      "capture_mode": "vision"
+    },
+    "expect": "image only"
+  },
+  {
+    "tool": "get_window_state",
+    "operation": "snapshot",
+    "arguments": {
+      "window_handle": 789
+    },
+    "expect": "second window state"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "enroll",
+    "arguments": {
+      "name": "Sandra",
+      "camera_index": 0
+    },
+    "expect": "enrolled profile"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "list",
+    "arguments": {},
+    "expect": "known faces"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "capture",
+    "arguments": {
+      "camera_index": 0
+    },
+    "expect": "matches"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "presence_status",
+    "arguments": {},
+    "expect": "armed/state/timeouts"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "arm",
+    "arguments": {},
+    "expect": "monitor armed"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "set_timeouts",
+    "arguments": {
+      "grace_s": 300,
+      "lock_timeout_s": 900,
+      "auto_lock": false
+    },
+    "expect": "timeouts saved"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "test",
+    "arguments": {
+      "camera_index": 0
+    },
+    "expect": "dry check, never locks"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "disarm",
+    "arguments": {},
+    "expect": "monitor disarmed"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "delete",
+    "arguments": {
+      "name": "Sandra"
+    },
+    "expect": "profile deleted"
+  },
+  {
+    "tool": "automation_face",
+    "operation": "presence",
+    "arguments": {
+      "camera_index": 0
+    },
+    "expect": "present/away-short/away-long"
+  }
+]

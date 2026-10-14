@@ -8,6 +8,7 @@ Record the screen with OBS / Windows Game Bar for a shareable video.
 import asyncio
 import subprocess
 import time
+from contextlib import suppress
 
 from windows_computer_use_mcp.tools.models import ToolResult
 
@@ -63,7 +64,7 @@ async def main():
 
     r = approve_automation(duration_minutes=5)
     print(f"  HITL approval: {r.get('status', '?')}")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 1: Kill stale Notepad ────────────────────────────────────
     demo_phase("Phase 1: Kill stale Notepad instances")
@@ -71,14 +72,12 @@ async def main():
 
     killed = 0
     for proc in psutil.process_iter(["name"]):
-        try:
+        with suppress(Exception):
             if proc.info["name"] and proc.info["name"].lower() == "notepad.exe":
                 proc.kill()
                 killed += 1
-        except Exception:
-            pass
     print(f"  Killed {killed} stale Notepad(s)" if killed else "  No stale Notepad found")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 2: Discover the desktop ──────────────────────────────────
     demo_phase("Phase 2: Discover running apps")
@@ -86,13 +85,13 @@ async def main():
     print(f"  Found {len(r.data.get('apps', []))} running apps:")
     for app in r.data.get("apps", [])[:5]:
         print(f"    - {app['app']} (handle={app['handle']})")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 3: Open Notepad ──────────────────────────────────────────
     demo_phase("Phase 3: Open Notepad")
     r = await _call("system", operation="start_app", app_path="notepad.exe")
     print(f"  Notepad started (PID: {r.data.get('process_id', '?')})")
-    time.sleep(2)
+    await asyncio.sleep(2)
 
     # ── Phase 4: Find, maximize, and create new blank document ──────────
     demo_phase("Phase 4: Find and maximize Notepad window")
@@ -104,14 +103,14 @@ async def main():
         print("  Maximized")
         # File > New to ensure a fresh blank document
         await _call("keyboard", operation="hotkey", keys=["alt", "f"])
-        time.sleep(0.8)
+        await asyncio.sleep(0.8)
         await _call("keyboard", operation="press", key="n")
-        time.sleep(1.0)
+        await asyncio.sleep(1.0)
         print("  New blank document created")
     else:
         print(f"  Window find: {r.message}")
         hwnd = None
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 5: Type prose into Notepad ───────────────────────────────
     demo_phase("Phase 5: Type prose into Notepad")
@@ -124,15 +123,15 @@ The tool handles screenshots, window management, and keyboard input.
 100 installers. One run. $2 in LLM costs. Zero human intervention."""
 
     await _call("windows", operation="focus", handle=hwnd)
-    time.sleep(0.5)
+    await asyncio.sleep(0.5)
     # Click into the NotepadTextBox edit area to set focus
     r = await _call("elements", operation="click", window_handle=hwnd, class_name="NotepadTextBox")
-    time.sleep(0.5)
+    await asyncio.sleep(0.5)
     # Type the text via keyboard (visible, character by character)
     for line in DEMO_TEXT.split("\n"):
         await _call("keyboard", operation="type", text=line, interval=0.04)
         await _call("keyboard", operation="press", key="enter")
-        time.sleep(0.3)
+        await asyncio.sleep(0.3)
     print("  Demo text typed into Notepad")
 
     # ── Phase 6: Screenshot ────────────────────────────────────────────
@@ -142,7 +141,7 @@ The tool handles screenshots, window management, and keyboard input.
         "visual", operation="screenshot", window_handle=hwnd, output_path=f"ocr_scans/screenshot_text_{ts}.png"
     )
     print(f"  Screenshot: ocr_scans/screenshot_text_{ts}.png")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 7: OCR readback ──
     demo_phase("Phase 7: OCR readback")
@@ -167,53 +166,53 @@ The tool handles screenshots, window management, and keyboard input.
     print(f"  OCR result saved: ocr_scans/ocr_result_{ts}.txt")
     ocr_output = f"\n--- OCR readback ---\n{ocr_preview if ocr_preview else '(none)'}"
     await _call("system", operation="clipboard_set", text=ocr_output)
-    time.sleep(0.2)
+    await asyncio.sleep(0.2)
     await _call("keyboard", operation="hotkey", keys=["ctrl", "v"])
-    time.sleep(1)
+    await asyncio.sleep(1)
     r = await _call(
         "visual", operation="screenshot", window_handle=hwnd, output_path=f"ocr_scans/screenshot_final_{ts}.png"
     )
     print(f"  Final: ocr_scans/screenshot_final_{ts}.png")
-    time.sleep(2)
+    await asyncio.sleep(2)
 
     # ── Phase 8: Close Notepad (don't save) ───────────────────────────
     demo_phase("Phase 8: Close Notepad")
     await _call("keyboard", operation="hotkey", keys=["alt", "f4"])
-    time.sleep(1)
+    await asyncio.sleep(1)
     # Don't Save via keyboard (Alt+N works on Win10/11, N is underlined in Don't Save)
     await _call("keyboard", operation="hotkey", keys=["alt", "n"])
     print("  Notepad closed")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 9: Bold and italic via line selection ───────────────
     demo_phase("Phase 9: Bold + Italic")
     subprocess.Popen("notepad.exe", shell=True)
-    time.sleep(2)
+    await asyncio.sleep(2)
     r = await _call("windows", operation="find", title="Notepad")
     if r.status == "success" and r.data.get("windows"):
         nh = r.data["windows"][0]["handle"]
         await _call("windows", operation="maximize", handle=nh)
-        time.sleep(1)
+        await asyncio.sleep(1)
         await _call("keyboard", operation="type", text="bold", interval=0.03)
         await _call("keyboard", operation="press", key="enter")
         await _call("keyboard", operation="type", text="italic", interval=0.03)
-        time.sleep(0.3)
+        await asyncio.sleep(0.3)
         # Line 2: Home+Shift+End selects "italic", Ctrl+I
         await _call("keyboard", operation="hotkey", keys=["home"])
         await _call("keyboard", operation="hotkey", keys=["shift", "end"])
         await _call("keyboard", operation="hotkey", keys=["ctrl", "i"])
-        time.sleep(0.2)
+        await asyncio.sleep(0.2)
         # Line 1: Up, Home+Shift+End selects "bold", Ctrl+B
         await _call("keyboard", operation="press", key="up")
         await _call("keyboard", operation="hotkey", keys=["home"])
         await _call("keyboard", operation="hotkey", keys=["shift", "end"])
         await _call("keyboard", operation="hotkey", keys=["ctrl", "b"])
-        time.sleep(0.5)
+        await asyncio.sleep(0.5)
     await _call("keyboard", operation="hotkey", keys=["alt", "f4"])
-    time.sleep(0.3)
+    await asyncio.sleep(0.3)
     await _call("keyboard", operation="press", key="n")
     print("  Bold and italic applied")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     # ── Phase 10: Telemetry summary ─────────────────────────────────
     demo_phase("Phase 10: Telemetry stats")
@@ -223,7 +222,7 @@ The tool handles screenshots, window management, and keyboard input.
     by_tool = stats.get("by_tool", {})
     for key, val in list(by_tool.items())[:5]:
         print(f"    {key}: {val['total']} calls, {val['success']} OK")
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     print("")
     print("=" * 60)

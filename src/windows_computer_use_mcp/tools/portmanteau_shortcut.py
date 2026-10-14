@@ -1,4 +1,4 @@
-"""Semantic app shortcut portmanteau — VRoid Studio and future registries."""
+"""Semantic app shortcut portmanteau - VRoid Studio and future registries."""
 
 from __future__ import annotations
 
@@ -16,13 +16,14 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ShortcutOperationRequest, ToolResult
 
 if app is not None:
 
     @app.tool(
         name="automation_shortcut",
-        description="""Semantic application shortcuts — send by action name, not raw key codes.
+        description="""Semantic application shortcuts - send by action name, not raw key codes.
 
 WHAT IT DOES:
 Maps app-specific action names (e.g. vroidstudio/export_vrm → F8) to keyboard sequences,
@@ -37,7 +38,15 @@ SUPPORTED APPS: vroidstudio (alias vroid, vroid_studio)
 
 RECOVERY:
 Call automation_windows(focus) first. Set windows_computer_use_mcp_KEYBOARD=win32 for HWND-targeted send.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_shortcut(request={"operation": "list", "app": "vroidstudio"}) -> {"status": "success", "data": {"shortcuts": [...]}}
+- automation_shortcut(request={"operation": "send", "app": "vroidstudio", "action": "export_vrm"}) -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_shortcut(request: ShortcutOperationRequest) -> ToolResult:
         """App-aware shortcut portmanteau."""

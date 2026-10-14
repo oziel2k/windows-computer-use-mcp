@@ -111,6 +111,9 @@ class FaceRecognition:
             image = face_recognition.load_image_file(image_path)
         else:
             image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+            if image is None:
+                logger.warning("Could not decode image data (not a valid image)")
+                return False
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # Find face locations and encodings
@@ -211,13 +214,15 @@ class FaceRecognition:
             return False, None, 0.0
 
     def capture_and_verify_face(
-        self, timeout: int = 30, confidence_threshold: float = 0.7
+        self, timeout: int = 30, confidence_threshold: float = 0.7, show: bool = False
     ) -> tuple[bool, str | None, float]:
         """Capture video from webcam and try to recognize a face.
 
         Args:
             timeout: Maximum time to try recognizing (seconds)
             confidence_threshold: Minimum confidence score to accept a match (0-1)
+            show: Show a preview window (needs GUI backend; default off so
+                headless servers and tests do not explode on imshow).
 
         Returns:
             Tuple of (success, name, confidence)
@@ -225,7 +230,8 @@ class FaceRecognition:
         """
         video_capture = cv2.VideoCapture(0)
         if not video_capture.isOpened():
-            raise RuntimeError("Could not open video device")
+            logger.warning("Could not open video device (no camera)")
+            return False, None, 0.0
 
         end_time = datetime.now() + timedelta(seconds=timeout)
 
@@ -304,9 +310,10 @@ class FaceRecognition:
                                         1,
                                     )
 
-                                    # Show the frame with the recognized face
-                                    cv2.imshow("Face Recognition", frame)
-                                    cv2.waitKey(1000)  # Show the match for 1 second
+                                    if show:
+                                        # Show the frame with the recognized face
+                                        cv2.imshow("Face Recognition", frame)
+                                        cv2.waitKey(1000)  # Show the match for 1 second
 
                                     return True, name, confidence
 
@@ -329,12 +336,13 @@ class FaceRecognition:
                                     1,
                                 )
 
-                # Display the resulting image
-                cv2.imshow("Face Recognition", frame)
+                # Display the resulting image (GUI builds only, never headless)
+                if show:
+                    cv2.imshow("Face Recognition", frame)
 
-                # Hit 'q' on the keyboard to quit
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
+                    # Hit 'q' on the keyboard to quit
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
+                        break
 
                 # Small delay to reduce CPU usage
                 time.sleep(0.05)
@@ -344,7 +352,11 @@ class FaceRecognition:
         finally:
             # Release handle to the webcam
             video_capture.release()
-            cv2.destroyAllWindows()
+            if show:
+                try:
+                    cv2.destroyAllWindows()
+                except cv2.error:
+                    pass
 
 
 # Create a global instance

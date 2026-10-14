@@ -13,6 +13,7 @@ import logging
 from windows_computer_use_mcp.app import app
 from windows_computer_use_mcp.cua_hud import CuaHUD
 from windows_computer_use_mcp.keylogger_service import GlobalKeyloggerService
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import KeyloggerOperationRequest, ToolResult
 
 logger = logging.getLogger(__name__)
@@ -42,18 +43,27 @@ SECURITY:
 - Do not use for spying; comply with law and policy.
 
 OPERATIONS:
-- 'start' — begin listening (optional max_buffer, include_release).
-- 'stop' — stop listener; buffer remains until cleared or new start.
-- 'status' — running flag, buffer fill, limits.
-- 'read' — return most recent events (limit, flush removes only those events from buffer).
-- 'clear' — empty buffer without stopping the listener.
+- 'start' - begin listening (optional max_buffer, include_release).
+- 'stop' - stop listener; buffer remains until cleared or new start.
+- 'status' - running flag, buffer fill, limits.
+- 'read' - return most recent events (limit, flush removes only those events from buffer).
+- 'clear' - empty buffer without stopping the listener.
 
 RETURNS:
 ToolResult with status, message, and data (events list, counts, etc.).
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"events": [...], ...}, "recovery_tip": str | null}
+
+## Examples
+- global_keylogger(request={"operation": "status"}) -> {"status": "success", "data": {"running": False, ...}}
+- global_keylogger(request={"operation": "start"}) -> {"status": "success", ...} (requires HITL approval + ENABLE_KEYLOGGER=1)
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def global_keylogger(request: KeyloggerOperationRequest) -> ToolResult:
         """Global keyboard capture handler."""
+        global _hud
         try:
             op = request.operation
 
@@ -102,7 +112,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
                         data=out,
                         recovery_tip="If already running, call 'stop' first.",
                     )
-                global _hud
                 _hud = CuaHUD()
                 _hud.start()
                 return ToolResult(
@@ -113,7 +122,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
             if op == "stop":
                 out = _svc.stop()
-                global _hud
                 if _hud:
                     _hud.stop()
                     _hud = None
@@ -121,7 +129,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
             if op == "status":
                 out = _svc.status()
-                global _hud
                 out["hud_active"] = _hud is not None
                 return ToolResult(status="success", message="Keylogger status.", data=out)
 
@@ -141,7 +148,6 @@ ToolResult with status, message, and data (events list, counts, etc.).
 
         except Exception as e:
             logger.error("global_keylogger error: %s", e)
-            global _hud
             if _hud:
                 _hud.stop()
                 _hud = None

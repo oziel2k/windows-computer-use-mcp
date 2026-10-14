@@ -1,4 +1,4 @@
-"""UI verification portmanteau tool — hash, diff, wait_stable, template/text asserts."""
+"""UI verification portmanteau tool - hash, diff, wait_stable, template/text asserts."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _READONLY_LOCAL
 from windows_computer_use_mcp.tools.models import AssertOperationRequest, ToolResult
 
 
@@ -31,14 +32,14 @@ if app is not None:
 
     @app.tool(
         name="automation_assert",
-        description="""UI verification for computer-use automation — stability polling, image diff, template/OCR asserts.
+        description="""UI verification for computer-use automation - stability polling, image diff, template/OCR asserts.
 
 WHAT IT DOES:
 Polls screenshots until the UI stabilizes, compares before/after images, and asserts expected visual
 or text state. Use after keyboard shortcuts or clicks to confirm the action succeeded before continuing.
 
 WHEN TO USE:
-- wait_stable: after navigation shortcuts (F-keys, Ctrl+N) — wait for rendering to finish
+- wait_stable: after navigation shortcuts (F-keys, Ctrl+N) - wait for rendering to finish
 - assert_changed: confirm a step produced a visible UI change
 - assert_unchanged: confirm a no-op or focus-only action did not alter the canvas
 - diff: get changed_pct and a heatmap PNG for failure logs
@@ -49,10 +50,18 @@ WHEN TO USE:
 RECOVERY:
 If wait_stable times out, increase timeout_s or narrow region_* to the editor panel only.
 If assert_changed fails with low changed_pct, the shortcut may not have reached the focused window.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"changed_pct": float, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_assert(request={"operation": "wait_stable", "timeout_s": 10}) -> {"status": "success", ...}
+- automation_assert(request={"operation": "assert_text", "expected_text": "Save", "region_left": 0, "region_top": 0, "region_right": 800, "region_bottom": 600}) -> {"status": "success", ...}
 """,
+        annotations=_READONLY_LOCAL,
     )
     def automation_assert(request: AssertOperationRequest) -> ToolResult:
-        """Verification portmanteau — stability, diff, and assert operations."""
+        """Verification portmanteau - stability, diff, and assert operations."""
         try:
             op = request.operation
             region = _region(request)

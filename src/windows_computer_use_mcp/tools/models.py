@@ -265,15 +265,29 @@ class VisualOperationRequest(BaseModel):
 class FaceOperationRequest(BaseModel):
     """Request model for face recognition operations."""
 
-    operation: Literal["add", "recognize", "list", "delete", "capture"] = Field(
-        ..., description="The face recognition operation."
-    )
+    operation: Literal[
+        "add",
+        "recognize",
+        "list",
+        "delete",
+        "capture",
+        "presence",
+        "test",
+        "arm",
+        "disarm",
+        "set_timeouts",
+        "presence_status",
+        "enroll",
+    ] = Field(..., description="The face recognition operation.")
 
     name: str | None = Field(None, description="Person's name for registration/deletion.")
     image_path: str | None = Field(None, description="Image path for recognition/registration.")
     camera_index: int = Field(0, description="Webcam index (0 is primary).", ge=0)
     save_capture_path: str | None = Field(None, description="Path to save captured frame.")
     tolerance: float = Field(0.6, description="Matching tolerance (lower is stricter).", ge=0, le=1)
+    grace_s: float | None = Field(None, description="Presence grace seconds (coffee run).", ge=0)
+    lock_timeout_s: float | None = Field(None, description="Presence lock timeout seconds (going home).", ge=0)
+    auto_lock: bool | None = Field(None, description="Lock workstation on away-long (default off).")
 
 
 class SystemOperationRequest(BaseModel):

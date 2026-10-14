@@ -19,6 +19,7 @@ from windows_computer_use_mcp.display_utils import (
     get_monitor_at_point,
     translate_coords,
 )
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult, WindowOperationRequest
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def _get_desktop():
 
 
 def _fast_find_by_title(title: str, *, partial: bool = True) -> list[dict[str, Any]]:
-    """Fast title search via pygetwindow — avoids slow UIA desktop enumeration."""
+    """Fast title search via pygetwindow - avoids slow UIA desktop enumeration."""
     try:
         import pygetwindow as gw
 
@@ -92,10 +93,10 @@ def _get_window_info(window) -> dict[str, Any]:
                 mon = get_monitor_at_point(cx, cy)
                 info["monitor_index"] = mon.index
                 info["monitor_name"] = mon.name
-            except Exception:
-                pass
-        except Exception:
-            pass
+            except Exception as e:
+                logger.debug("monitor lookup failed, omitting monitor fields: %s", e)
+        except Exception as e:
+            logger.debug("window info probe failed, returning partial info: %s", e)
 
         return info
     except Exception as e:
@@ -129,7 +130,15 @@ RECOVERY AND TROUBLESHOOTING:
 
 RETURNS:
 A ToolResult object containing standardized outcome, message, and window metadata.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {"count": int, "windows": [...]}, "recovery_tip": str | null}
+
+## Examples
+- automation_windows(request={"operation": "list"}) -> {"status": "success", "message": "Successfully listed 12 visible windows.", ...}
+- automation_windows(request={"operation": "find", "title": "Notepad", "partial": True}) -> {"status": "success", "data": {"count": 1, ...}}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_windows(request: WindowOperationRequest) -> ToolResult:
         """Unified window management handler."""

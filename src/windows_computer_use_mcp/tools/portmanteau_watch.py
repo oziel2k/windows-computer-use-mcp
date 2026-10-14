@@ -14,12 +14,32 @@ import uuid
 from typing import Any
 
 from windows_computer_use_mcp.app import app
+from windows_computer_use_mcp.safety import (
+    DEFAULT_MAX_WATCHERS,
+    ENV_MAX_WATCHERS,
+    watcher_limits,
+)
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import ToolResult
 
 logger = logging.getLogger(__name__)
 
 _WATCHERS: dict[str, dict[str, Any]] = {}
 _WATCHER_LOCK = threading.Lock()
+
+
+def watcher_census() -> dict[str, Any]:
+    """Running watcher count against the cap (for safety status)."""
+    from windows_computer_use_mcp.safety import _env_int
+
+    with _WATCHER_LOCK:
+        running = sum(1 for v in _WATCHERS.values() if v.get("status") == "running")
+        total = len(_WATCHERS)
+    return {
+        "running": running,
+        "tracked_total": total,
+        "max_watchers": _env_int(ENV_MAX_WATCHERS, DEFAULT_MAX_WATCHERS),
+    }
 
 
 def _watcher_thread(
@@ -48,7 +68,8 @@ def _watcher_thread(
                             met = True
                             detail = {"title": win.window_text(), "handle": win.handle}
                             break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("watch appear-poll skipped failing window: %s", e)
                         continue
 
             elif condition == "window_closes":
@@ -67,7 +88,8 @@ def _watcher_thread(
                             if target.lower() in win.window_text().lower():
                                 found = True
                                 break
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("watch text-poll skipped failing window: %s", e)
                             continue
                     met = not found
                     detail = {"title": target, "closed": met}
@@ -80,8 +102,8 @@ def _watcher_thread(
                             full = win.window_text()
                             met = target.lower() in full.lower()
                             detail = {"found": target if met else None}
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("watch text-match probe failed: %s", e)
                 else:
                     for win in desktop.windows():
                         try:
@@ -89,7 +111,8 @@ def _watcher_thread(
                                 met = True
                                 detail = {"title": win.window_text(), "handle": win.handle}
                                 break
-                        except Exception:
+                        except Exception as e:
+                            logger.debug("watch element-poll skipped failing window: %s", e)
                             continue
 
             elif condition == "element_appears":
@@ -103,10 +126,11 @@ def _watcher_thread(
                                     met = True
                                     detail = {"title": child.window_text(), "handle": child.handle}
                                     break
-                            except Exception:
+                            except Exception as e:
+                                logger.debug("watch child-poll skipped failing child: %s", e)
                                 continue
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("watch element-appear poll failed: %s", e)
 
             if met:
                 with _WATCHER_LOCK:
@@ -137,7 +161,15 @@ OPERATIONS:
 - status: Check whether a watcher has triggered.
 - stop: Cancel a running watcher.
 - list: List all active watchers.
+
+## Return Format
+{"status": "success" | "error" | "blocked", "message": str, "data": {"watcher_id": str, ...}, "recovery_tip": str | null}
+
+## Examples
+- automation_watch(operation="start", condition="window_appears", target="Save As") -> {"status": "success", "data": {"watcher_id": "watch_ab12cd34"}}
+- automation_watch(operation="status", watcher_id="watch_ab12cd34") -> {"status": "success", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     async def automation_watch(
         operation: str,
@@ -151,8 +183,19 @@ OPERATIONS:
         if operation == "start":
             if not condition or not target:
                 return ToolResult(status="error", message="condition and target are required.")
-            wid = watcher_id or f"watch_{uuid.uuid4().hex[:8]}"
+            limits = watcher_limits()
+            interval = max(float(interval), limits["min_interval_s"])
+            timeout = min(max(float(timeout), 1.0), limits["max_timeout_s"])
             with _WATCHER_LOCK:
+                running = sum(1 for v in _WATCHERS.values() if v.get("status") == "running")
+                if running >= limits["max_watchers"]:
+                    return ToolResult(
+                        status="blocked",
+                        message=f"Watcher cap reached ({running}/{limits['max_watchers']} running).",
+                        recovery_tip="Stop a watcher (stop op) or raise "
+                        f"{ENV_MAX_WATCHERS}; list op shows the running set.",
+                    )
+                wid = watcher_id or f"watch_{uuid.uuid4().hex[:8]}"
                 _WATCHERS[wid] = {
                     "status": "running",
                     "condition": condition,

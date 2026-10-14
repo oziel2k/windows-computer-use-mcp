@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["evidence"])
 
@@ -28,7 +31,7 @@ def _evidence_roots() -> list[Path]:
     docs = Path.home() / "Documents"
     roots.append(docs / "vroid_exports")
     roots.append(docs)
-    # Task sessions may write to arbitrary output_dir — scan recent evidence paths
+    # Task sessions may write to arbitrary output_dir - scan recent evidence paths
     try:
         from windows_computer_use_mcp import task_engine
 
@@ -38,8 +41,8 @@ def _evidence_roots() -> list[Path]:
                     raw = ev.get(key)
                     if raw:
                         roots.append(Path(str(raw)).parent)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("evidence roots scan failed: %s", e)
     seen: set[str] = set()
     out: list[Path] = []
     for r in roots:

@@ -10,7 +10,17 @@ import logging
 import os
 import time
 
+# Local annotation hints (inline: importing tools._annotations here would
+# cycle through tools/__init__ -> app while the package is initializing).
+_MUTATING_LOCAL = {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}
+
 logger = logging.getLogger(__name__)
+
+
+def _fallback_version() -> str:
+    """Version when the FastMCP app instance failed to build."""
+    return "0.0.0"
+
 
 try:
     from fastmcp import FastMCP
@@ -35,15 +45,19 @@ try:
         version=_package_version(),
     )
 
+    package_version = _package_version
+
     logger.info("FastMCP 3.4+ app instance created successfully")
 
 except ImportError as e:
     logger.critical(f"Failed to import FastMCP: {e}")
     logger.critical("Please install FastMCP 3.4+ using: pip install fastmcp>=3.4.0")
     app = None
+    package_version = _fallback_version
 except Exception as e:
     logger.critical(f"Error creating FastMCP app: {e}", exc_info=True)
     app = None
+    package_version = _fallback_version
 
 # Check OCR dependencies
 try:
@@ -92,9 +106,16 @@ class ApprovalState:
 approval_state = ApprovalState()
 
 
-@app.tool()
+@app.tool(annotations=_MUTATING_LOCAL)
 def approve_automation(duration_minutes: float = 5.0) -> dict:
     """Approve UI automation actions for a specified duration to prevent repetitive prompts.
+
+    ## Return Format
+    {"status": "success", "message": str, "safe_window_until": float}
+
+    ## Examples
+    - approve_automation(duration_minutes=5.0) -> {"status": "success", "message": "UI automation approved until 17:05:00 (5.0 minutes)", ...}
+    - approve_automation(duration_minutes=30) -> {"status": "success", ...}
 
     Args:
         duration_minutes: Number of minutes to allow automated actions (default 5.0).
@@ -109,11 +130,18 @@ def approve_automation(duration_minutes: float = 5.0) -> dict:
     }
 
 
-@app.tool()
+@app.tool(annotations=_MUTATING_LOCAL)
 def automation_safety(
     operation: str = "status",
 ) -> dict:
     """Inspect or reset server-side safety limits (rate, kill switch, dry-run). Not a substitute for HITL.
+
+    ## Return Format
+    {"status": "success" | "error", "snapshot": {...} | "message": str, ...}
+
+    ## Examples
+    - automation_safety(operation="status") -> {"status": "success", "snapshot": {...}, ...}
+    - automation_safety(operation="reset_counters") -> {"status": "success", "message": "Rolling action window cleared.", ...}
 
     Operations:
     - status: Counters + env flags (windows_computer_use_mcp_KILL_SWITCH, DRY_RUN, MAX_ACTIONS_PER_MINUTE, ENABLE_FACE).
@@ -204,7 +232,7 @@ Verify:
 @app.resource("resource://automation/current_state")
 def get_current_automation_state() -> str:
     """Dynamic resource providing a snapshot of the current desktop automation environment."""
-    return f"""PyWinAuto MCP v0.4.2
+    return f"""PyWinAuto MCP v{package_version()}
 HITL Status: {"Active" if approval_state.is_approved() else "Locked"}
 OCR Available: {OCR_AVAILABLE}
 Timestamp: {time.ctime()}

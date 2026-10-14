@@ -8,10 +8,10 @@
   "type": "mcp_server",
   "status": "production",
   "framework": "FastMCP 3.4+",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "last_sota_sync": "2026-06-25",
   "sota_version": "13.0",
-  "tools": 18,
+  "tools": 20,
   "transport": [
     "stdio",
     "http"

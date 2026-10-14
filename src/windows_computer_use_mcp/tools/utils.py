@@ -56,7 +56,7 @@ def handle_errors[F: Callable[..., Any]](func: F) -> Callable[..., dict[str, Any
                 return result
 
             # Otherwise, wrap the result in a success response
-            return SuccessResponse(data={"result": result}).dict()
+            return SuccessResponse(data={"result": result}).model_dump()
 
         except Exception as e:
             error_type = e.__class__.__name__
@@ -73,7 +73,7 @@ def handle_errors[F: Callable[..., Any]](func: F) -> Callable[..., dict[str, Any
             logger.error(f"Error in {func.__name__}: {error_msg}", exc_info=True, extra=log_extra)
 
             # Return a standardized error response
-            return ErrorResponse(error=error_msg, error_type=error_type).dict()
+            return ErrorResponse(error=error_msg, error_type=error_type).model_dump()
 
     return wrapper
 

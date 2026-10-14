@@ -125,7 +125,7 @@ def start_app_monitoring(
     # Convert time windows to dict for the security module
     time_windows = None
     if request.time_windows:
-        time_windows = [tw.dict() for tw in request.time_windows]
+        time_windows = [tw.model_dump() for tw in request.time_windows]
 
     # Start monitoring in background
     background_tasks.add_task(

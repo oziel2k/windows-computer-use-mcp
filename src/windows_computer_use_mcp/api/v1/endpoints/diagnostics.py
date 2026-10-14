@@ -6,6 +6,7 @@ error state, and CUA readiness.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -13,7 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from windows_computer_use_mcp.app import OCR_AVAILABLE
+from windows_computer_use_mcp.app import OCR_AVAILABLE, package_version
 from windows_computer_use_mcp.app import app as mcp_app
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["diagnostics"])
 
 SERVER_START_TIME = time.time()
-VERSION = "0.4.2"
+VERSION = package_version()
 PORT = 10789
 CATEGORIES = ["automation", "visual", "system"]
 
@@ -47,8 +48,8 @@ async def get_diagnostics() -> dict[str, Any]:
         disk_path = os.environ.get("SystemDrive", "C:") + "\\"
         disk_usage = psutil.disk_usage(disk_path)
         disk_percent = disk_usage.percent
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("diagnostics host metrics failed: %s", e)
 
     # Tool count from FastMCP app
     tool_count = 0
@@ -56,8 +57,8 @@ async def get_diagnostics() -> dict[str, Any]:
         try:
             registered = await mcp_app.list_tools()
             tool_count = len(registered)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("diagnostics tool listing failed: %s", e)
 
     # Recent errors (extend with ActivityLog when available)
     error_count = 0
@@ -69,15 +70,16 @@ async def get_diagnostics() -> dict[str, Any]:
         try:
             import subprocess
 
-            result = subprocess.run(
+            result = await asyncio.to_thread(
+                subprocess.run,
                 [r"C:\Program Files\Tesseract-OCR\tesseract.exe", "--version"],
                 capture_output=True,
                 text=True,
                 timeout=5,
             )
             tesseract_available = result.returncode == 0
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("diagnostics tesseract probe failed: %s", e)
 
     window_found = False
     try:
@@ -87,8 +89,8 @@ async def get_diagnostics() -> dict[str, Any]:
         win = app.window(title_re="Pywinauto MCP")
         win.wait("visible", timeout=2)
         window_found = True
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("diagnostics operator-window probe failed: %s", e)
 
     return {
         "success": True,

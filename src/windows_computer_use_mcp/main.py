@@ -1,21 +1,30 @@
-"""PyWinAuto MCP — Windows UI automation server (FastMCP).
+"""PyWinAuto MCP - Windows UI automation server (FastMCP).
 
 Started and stopped by the MCP host (stdio or HTTP transport).
 """
 
 import logging
 import logging.config
+import os
 import sys
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from .transport import run_server
 
+# Absolute log path: a bare filename lands in whatever cwd the MCP host used (e.g. D:\Dev\repos)
+LOG_DIR = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "pywinauto-mcp" / "logs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Configure logging before other imports to ensure proper logging setup
+# Rotating logs: an unrotated FileHandler grew to 3.4 GB in production (BUG-071).
+# 10 MB x 5 keeps diagnostics without disk spirals.
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stderr),
-        logging.FileHandler("pywinauto-mcp.log", encoding="utf-8"),
+        RotatingFileHandler(LOG_DIR / "pywinauto-mcp.log", maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"),
     ],
 )
 
@@ -23,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 # Import the FastMCP app instance
 try:
-    from windows_computer_use_mcp.app import OCR_AVAILABLE, app
+    from windows_computer_use_mcp.app import OCR_AVAILABLE, app, package_version
 
     logger.info("Successfully imported FastMCP app instance")
 
@@ -102,7 +111,7 @@ def main() -> None:
         return
     try:
         logger.info("=" * 60)
-        logger.info("PyWinAuto MCP - Portmanteau Edition v0.4.2")
+        logger.info("PyWinAuto MCP - Portmanteau Edition v%s", package_version())
         logger.info("=" * 60)
         logger.info("FastMCP version: 3.4+")
         logger.info(f"OCR available: {OCR_AVAILABLE}")

@@ -1,4 +1,4 @@
-"""File dialog portmanteau — path entry with clipboard paste fallback."""
+"""File dialog portmanteau - path entry with clipboard paste fallback."""
 
 from __future__ import annotations
 
@@ -15,13 +15,14 @@ except ImportError:
     logger = logging.getLogger(__name__)
     app = None
 
+from windows_computer_use_mcp.tools._annotations import _MUTATING_LOCAL
 from windows_computer_use_mcp.tools.models import DialogOperationRequest, ToolResult
 
 if app is not None:
 
     @app.tool(
         name="automation_dialog",
-        description="""Windows file dialog helpers — set path field and confirm.
+        description="""Windows file dialog helpers - set path field and confirm.
 
 WHAT IT DOES:
 Fills Save/Open/Export dialog path fields using clipboard paste (default) or typed
@@ -35,7 +36,15 @@ WHEN TO USE:
 RECOVERY:
 Ensure the target dialog field is focused (Tab into it if needed). Call
 automation_windows(focus) on the parent app first. For long paths, keep use_clipboard=true.
+
+## Return Format
+{"status": "success" | "error", "message": str, "data": {...}, "recovery_tip": str | null}
+
+## Examples
+- automation_dialog(request={"operation": "set_path", "path": "C:/Exports/report.pdf"}) -> {"status": "success", ...}
+- automation_dialog(request={"operation": "confirm"}) -> {"status": "success", "message": "Dialog confirmed.", ...}
 """,
+        annotations=_MUTATING_LOCAL,
     )
     def automation_dialog(request: DialogOperationRequest) -> ToolResult:
         """Dialog path entry portmanteau."""

@@ -12,6 +12,7 @@ from windows_computer_use_mcp.api.v1.endpoints import (
     evidence,
     health,
     llm,
+    meta,
     safety,
     system,
     tools,
@@ -31,3 +32,4 @@ api_router.include_router(llm.router, prefix="/llm", tags=["llm"])
 api_router.include_router(cameras.router, prefix="/cameras", tags=["cameras"])
 api_router.include_router(diagnostics.router, tags=["diagnostics"])
 api_router.include_router(evidence.router, tags=["evidence"])
+api_router.include_router(meta.router, tags=["meta"])
